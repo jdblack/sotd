@@ -9,9 +9,9 @@ func main() {
   log.Println(config, err)
   bot := NewSotdBot(config)
   err = bot.Connect()
-  //if err != nil {
-  //  panic(err)
-  //}
+  if err != nil {
+    panic(err)
+  }
   bot.Run()
 }
 
