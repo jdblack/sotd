@@ -3,40 +3,49 @@ import (
   "github.com/slack-go/slack"
 	"github.com/slack-go/slack/socketmode"
   "github.com/slack-go/slack/slackevents"
+  "encoding/json"
   "fmt"
   "log"
   "os"
 )
 
-type sotdBot struct {
+type slackBot struct {
   api *slack.Client
   client *socketmode.Client
   userID string
   config map[string]string
 }
 
-func NewSotdBot(config map[string]string) (*sotdBot) {
-  return &sotdBot{config:config}
+func NewSotdBot(config map[string]string) (*slackBot) {
+  return &slackBot{config:config}
 }
 
-func (s *sotdBot) reply(event *slackevents.MessageEvent, message string) {
-  fmt.Println("======================")
-  a,b,c := s.api.PostMessage(
+func (s *slackBot) Channels() ([]slack.Channel, error) {
+  up := slack.GetConversationsForUserParameters{UserID: s.userID }
+  channels,_,err := s.api.GetConversationsForUser(&up)
+  for channel  := range channels {
+    fmt.Println(channels[channel])
+    m,_ := json.Marshal(channels[channel])
+    fmt.Println(string(m))
+    fmt.Println("============")
+  }
+  return channels, err
+}
+
+func (s *slackBot) message(event *slackevents.MessageEvent, message string) (error){
+
+  _,_,err := s.api.PostMessage(
     event.Channel,
     slack.MsgOptionText(
       fmt.Sprintf(":wave: Hi there, <@%v>! %s", event.User, message),
       false,
     ),
   )
-  fmt.Println(a)
-  fmt.Println(b)
-  fmt.Println(c)
-  fmt.Println("======================")
-
+  return err
 
 }
 
-func (s *sotdBot) Connect() (error){
+func (s *slackBot) Connect() (error){
   fmt.Println("Connecting")
   fmt.Println(s.config)
   s.api = slack.New(
@@ -66,12 +75,12 @@ func (s *sotdBot) Connect() (error){
   return nil
 }
 
-func (s *sotdBot) Run() {
+func (s *slackBot) Run() {
   go s.eventHandler()
   s.client.Run()
 }
 
-func (s *sotdBot) eventHandler() {
+func (s *slackBot) eventHandler() {
   for envelope := range s.client.Events {
     switch(envelope.Type) {
     case socketmode.EventTypeConnecting:
@@ -93,7 +102,9 @@ func (s *sotdBot) eventHandler() {
           if s.userID == event.User {
             continue
           }
-          s.reply(event, "sup bro")
+          s.message(event, "sup bro: "+event.Text)
+          fmt.Println("===============")
+          s.Channels()
         default:
           fmt.Println("I don't recognize this: ", event)
           fmt.Println(event)
