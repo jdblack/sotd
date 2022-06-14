@@ -33,16 +33,14 @@ func (s *slackBot) Channels() ([]slack.Channel, error) {
 }
 
 func (s *slackBot) message(event *slackevents.MessageEvent, message string) (error){
-
   _,_,err := s.api.PostMessage(
     event.Channel,
     slack.MsgOptionText(
-      fmt.Sprintf(":wave: Hi there, <@%v>! %s", event.User, message),
+      message,
       false,
     ),
   )
   return err
-
 }
 
 func (s *slackBot) Connect() (error){
@@ -56,13 +54,9 @@ func (s *slackBot) Connect() (error){
   )
 
   fmt.Println("sockemode starting")
+  output_log  := log.New(os.Stdout, "socketmode: ", log.Lshortfile|log.LstdFlags)
 
-  s.client = socketmode.New(
-    s.api,
-    socketmode.OptionDebug(true),
-    socketmode.OptionLog(log.New(os.Stdout, "socketmode: ", log.Lshortfile|log.LstdFlags)),
-  )
-
+  s.client = socketmode.New( s.api, socketmode.OptionLog( output_log),)
 
   authTest, err := s.api.AuthTest()
   if err  != nil {
@@ -75,9 +69,25 @@ func (s *slackBot) Connect() (error){
   return nil
 }
 
+// This code gets the bot started. Pull up an evenet handler and start
 func (s *slackBot) Run() {
   go s.eventHandler()
   s.client.Run()
+}
+
+// Process actual messages. 
+func (s *slackBot) handleMessage(event *slackevents.MessageEvent) {
+  if s.userID == event.User { return }             // Bot ignore thyself
+  if event.SubType == "message_changed" { return } // fuhget the past
+
+  resp,err := Commands(event.Text)
+
+  if err != nil {
+    msg := "Sorry, but I had a problem: " + err.Error()
+    msg += " with event : " + fmt.Sprintf("%v\n",event)
+    s.message(event, msg)
+  }
+  s.message(event, resp)
 }
 
 func (s *slackBot) eventHandler() {
@@ -99,12 +109,9 @@ func (s *slackBot) eventHandler() {
       case slackevents.CallbackEvent:
         switch event := payload.InnerEvent.Data.(type) {
         case *slackevents.MessageEvent:
-          if s.userID == event.User {
-            continue
-          }
-          s.message(event, "sup bro: "+event.Text)
-          fmt.Println("===============")
-          s.Channels()
+          // The actual message handler!
+          s.handleMessage(event)
+          // s.Channels()
         default:
           fmt.Println("I don't recognize this: ", event)
           fmt.Println(event)
@@ -116,7 +123,6 @@ func (s *slackBot) eventHandler() {
     }
   }
 }
-
 
 
 
