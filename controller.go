@@ -1,17 +1,55 @@
 package main
-
 import (
   "errors"
   "fmt"
   "strings"
+  "time"
 )
 
-// This takes user input for a song and adds
-// it to the jukebox...
+// FromBot messages from the Bot
+type FromBot struct {
+  message string
+  user string
+}
+
+// ToBot struct
+type ToBot struct {
+  message string
+  destuser string
+  destchannel string
+}
+
+// Controller struct
+type Controller struct {
+  frombot chan FromBot
+  tobot chan ToBot
+}
+
+func (c *Controller) start() (chan FromBot, chan ToBot) {
+  c.frombot  = make(chan FromBot, 100) 
+  c.tobot = make(chan ToBot, 100)
+  go c.mainloop()
+  return c.frombot, c.tobot
+}
+
+func (c *Controller) mainloop() {
+  for {
+    select {
+    case in  := <- c.frombot :
+      fmt.Printf("%+v\n", in)
+      c.Commands(in.message)
+    case <-time.After(1 * time.Second):
+      fmt.Println("Timeout")
+    }
+  }
+}
+
+
+// AddSong blah
 // FIXME We need to know the user
 // FIXME we need a jukebox too =)
 func AddSong(input string) (string, error) {
-  data, err := ParseSongInput(input)
+  data, err := ParseStrIntoMap(input)
 
   if err != nil {
     return "Error adding "+input, err
@@ -21,9 +59,9 @@ func AddSong(input string) (string, error) {
   return fmt.Sprint(data), err
 }
 
-// Here we strip off the first atom as the wanted command
+// Commands Here we strip off the first atom as the wanted command
 // and pack the rest into a string
-func Commands(msg string) (string, error){
+func (c *Controller) Commands(msg string) (string, error){
   fmt.Println("Parsing command " + msg)
   parsed := strings.SplitN(msg," ", 2)
   cmd := parsed[0]
@@ -42,9 +80,8 @@ func Commands(msg string) (string, error){
   return "", errors.New("Unknown command " + cmd)
 }
 
-// This converts a string of thing=other;this=that into a map
-// It feels like there should be a better way to do this.
-func ParseSongInput(in string) (map[string]string, error) {
+// ParseStrIntoMap way to do this.
+func ParseStrIntoMap(in string) (map[string]string, error) {
   answer := make(map[string]string)
   atoms := strings.Split(in,";")
   for _,atom := range atoms {

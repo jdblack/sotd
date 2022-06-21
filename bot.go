@@ -1,4 +1,4 @@
-package main
+package main 
 import (
   "github.com/slack-go/slack"
 	"github.com/slack-go/slack/socketmode"
@@ -8,17 +8,19 @@ import (
   "log"
   "os"
 )
-
 type slackBot struct {
   api *slack.Client
   client *socketmode.Client
   userID string
   config map[string]string
+  frombot chan FromBot
+  tobot chan ToBot
 }
 
-func NewSotdBot(config map[string]string) (*slackBot) {
-  return &slackBot{config:config}
-}
+// NewSotdBot start a bot
+//func NewSotdBot(config map[string]string) (*slackBot) {
+//  return &slackBot{config:config}
+//}
 
 func (s *slackBot) Channels() ([]slack.Channel, error) {
   up := slack.GetConversationsForUserParameters{UserID: s.userID }
@@ -54,9 +56,9 @@ func (s *slackBot) Connect() (error){
   )
 
   fmt.Println("sockemode starting")
-  output_log  := log.New(os.Stdout, "socketmode: ", log.Lshortfile|log.LstdFlags)
+  outputLog  := log.New(os.Stdout, "socketmode: ", log.Lshortfile|log.LstdFlags)
 
-  s.client = socketmode.New( s.api, socketmode.OptionLog( output_log),)
+  s.client = socketmode.New( s.api, socketmode.OptionLog( outputLog),)
 
   authTest, err := s.api.AuthTest()
   if err  != nil {
@@ -70,24 +72,25 @@ func (s *slackBot) Connect() (error){
 }
 
 // This code gets the bot started. Pull up an evenet handler and start
-func (s *slackBot) Run() {
+func (s *slackBot) Run( frombot chan FromBot, tobot chan ToBot) {
+  s.tobot = tobot
+  s.frombot = frombot
   go s.eventHandler()
   s.client.Run()
 }
+
+func NewSotdBot(config map[string]string) (*slackBot) {
+  return &slackBot{config:config}
+}
+
 
 // Process actual messages. 
 func (s *slackBot) handleMessage(event *slackevents.MessageEvent) {
   if s.userID == event.User { return }             // Bot ignore thyself
   if event.SubType == "message_changed" { return } // fuhget the past
-
-  resp,err := Commands(event.Text)
-
-  if err != nil {
-    msg := "Sorry, but I had a problem: " + err.Error()
-    msg += " with event : " + fmt.Sprintf("%v\n",event)
-    s.message(event, msg)
-  }
-  s.message(event, resp)
+  fmt.Printf("%+v\n", event)
+  // FIXME  we need to send to the controller  channel instead
+  s.frombot <- FromBot { message: event.Text, user: event.User}
 }
 
 func (s *slackBot) eventHandler() {
