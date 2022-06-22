@@ -10,14 +10,14 @@ func main() {
   fmt.Println("Hi")
   config,err := parseConfig(configFile)
   log.Println(config, err)
-  bot := NewSotdBot(config)
-  err = bot.Connect()
+
+  controller := Controller{}
+  frombot, tobot := controller.start()
+
+  bot, err := NewSotdBot(config, frombot, tobot)
   if err != nil {
     panic(err)
   }
-  controller := Controller{}
-
-  frombot, tobot := controller.start()
-  bot.Run(frombot, tobot)
+  bot.Run()
 }
 

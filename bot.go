@@ -8,7 +8,9 @@ import (
   "log"
   "os"
 )
-type slackBot struct {
+
+// SlackBot struct
+type SlackBot struct {
   api *slack.Client
   client *socketmode.Client
   userID string
@@ -17,12 +19,8 @@ type slackBot struct {
   tobot chan ToBot
 }
 
-// NewSotdBot start a bot
-//func NewSotdBot(config map[string]string) (*slackBot) {
-//  return &slackBot{config:config}
-//}
-
-func (s *slackBot) Channels() ([]slack.Channel, error) {
+// Channels  Get the channels list
+func (s *SlackBot) Channels() ([]slack.Channel, error) {
   up := slack.GetConversationsForUserParameters{UserID: s.userID }
   channels,_,err := s.api.GetConversationsForUser(&up)
   for channel  := range channels {
@@ -34,7 +32,7 @@ func (s *slackBot) Channels() ([]slack.Channel, error) {
   return channels, err
 }
 
-func (s *slackBot) message(event *slackevents.MessageEvent, message string) (error){
+func (s *SlackBot) message(event *slackevents.MessageEvent, message string) (error){
   _,_,err := s.api.PostMessage(
     event.Channel,
     slack.MsgOptionText(
@@ -45,7 +43,7 @@ func (s *slackBot) message(event *slackevents.MessageEvent, message string) (err
   return err
 }
 
-func (s *slackBot) Connect() (error){
+func (s *SlackBot) connect() (error){
   fmt.Println("Connecting")
   fmt.Println(s.config)
   s.api = slack.New(
@@ -71,29 +69,50 @@ func (s *slackBot) Connect() (error){
   return nil
 }
 
-// This code gets the bot started. Pull up an evenet handler and start
-func (s *slackBot) Run( frombot chan FromBot, tobot chan ToBot) {
-  s.tobot = tobot
-  s.frombot = frombot
+// Run This code gets the bot started. Pull up an evenet handler and start
+func (s *SlackBot) Run() {
   go s.eventHandler()
+  go s.sendMessage()
   s.client.Run()
 }
 
-func NewSotdBot(config map[string]string) (*slackBot) {
-  return &slackBot{config:config}
+// NewSotdBot Setup a new slackbot
+func NewSotdBot(config map[string]string, f chan FromBot, t chan ToBot) (*SlackBot,error) {
+  bot := SlackBot{config:config}
+  bot.tobot = t
+  bot.frombot = f
+  err := bot.connect()
+  return &bot, err
 }
 
+func (s *SlackBot) sendMessage() {
+  for {
+    select {
+    case in := <- s.tobot :
+      fmt.Println("============")
+      fmt.Printf("%+v\n", in)
+      fmt.Println("============")
+      fmt.Println("============")
+      s.client.PostMessage(
+        in.user,
+        slack.MsgOptionText(in.message,false),
+        slack.MsgOptionAsUser(true),
+      )
+
+
+    }
+  }
+}
 
 // Process actual messages. 
-func (s *slackBot) handleMessage(event *slackevents.MessageEvent) {
+func (s *SlackBot) handleMessage(event *slackevents.MessageEvent) {
   if s.userID == event.User { return }             // Bot ignore thyself
   if event.SubType == "message_changed" { return } // fuhget the past
   fmt.Printf("%+v\n", event)
-  // FIXME  we need to send to the controller  channel instead
   s.frombot <- FromBot { message: event.Text, user: event.User}
 }
 
-func (s *slackBot) eventHandler() {
+func (s *SlackBot) eventHandler() {
   for envelope := range s.client.Events {
     switch(envelope.Type) {
     case socketmode.EventTypeConnecting:

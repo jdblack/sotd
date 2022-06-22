@@ -15,8 +15,8 @@ type FromBot struct {
 // ToBot struct
 type ToBot struct {
   message string
-  destuser string
-  destchannel string
+  user string
+  channel string
 }
 
 // Controller struct
@@ -38,8 +38,9 @@ func (c *Controller) mainloop() {
     case in  := <- c.frombot :
       fmt.Printf("%+v\n", in)
       c.Commands(in.message)
-    case <-time.After(1 * time.Second):
-      fmt.Println("Timeout")
+      c.tobot <- ToBot { message: "I got message:" + in.message,  user: in.user }
+    case <-time.After(5 * time.Second):
+      fmt.Println("Tick Tock")
     }
   }
 }
