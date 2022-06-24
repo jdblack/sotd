@@ -87,6 +87,7 @@ func NewSotdBot(config map[string]string, f chan FromBot, t chan ToBot) (*SlackB
 
 func (s *SlackBot) sendMessage() {
   for {
+    fmt.Println("Start message listener")
     select {
     case in := <- s.tobot :
       fmt.Println("============")
@@ -133,7 +134,6 @@ func (s *SlackBot) eventHandler() {
         case *slackevents.MessageEvent:
           // The actual message handler!
           s.handleMessage(event)
-          // s.Channels()
         default:
           fmt.Println("I don't recognize this: ", event)
           fmt.Println(event)

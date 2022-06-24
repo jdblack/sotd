@@ -23,13 +23,30 @@ type ToBot struct {
 type Controller struct {
   frombot chan FromBot
   tobot chan ToBot
+  config map[string]string
+  bot *SlackBot
 }
 
-func (c *Controller) start() (chan FromBot, chan ToBot) {
+func (c *Controller) startBot() (error) {
+  var err error
+  c.bot, err = NewSotdBot(c.config, c.frombot, c.tobot)
+  if err != nil {
+    return err
+  }
+  go c.bot.Run()
+  return err
+}
+
+func (c *Controller) start() {
   c.frombot  = make(chan FromBot, 100) 
   c.tobot = make(chan ToBot, 100)
-  go c.mainloop()
-  return c.frombot, c.tobot
+  fmt.Println("starting bot")
+  err := c.startBot()
+  fmt.Println("bot started")
+  if err != nil {
+    panic(err)
+  }
+  c.mainloop()
 }
 
 func (c *Controller) mainloop() {
@@ -37,8 +54,7 @@ func (c *Controller) mainloop() {
     select {
     case in  := <- c.frombot :
       fmt.Printf("%+v\n", in)
-      c.Commands(in.message)
-      c.tobot <- ToBot { message: "I got message:" + in.message,  user: in.user }
+      c.Commands(in) 
     case <-time.After(5 * time.Second):
       fmt.Println("Tick Tock")
     }
@@ -47,24 +63,46 @@ func (c *Controller) mainloop() {
 
 
 // AddSong blah
-// FIXME We need to know the user
 // FIXME we need a jukebox too =)
-func AddSong(input string) (string, error) {
-  data, err := ParseStrIntoMap(input)
+func (c *Controller) AddSong(in FromBot, args string) {
+  data, err := ParseStrIntoMap(in.message)
 
   if err != nil {
-    return "Error adding "+input, err
+    panic("Error adding " + in.message)
   }
-  fmt.Println("Adding song")
+  res := []string{}
+  for key, element := range data {
+    res = append(res, key + ":" + element)
+  }
+
+  c.Tell(in.user, "Adding song" + strings.Join(res, ", "))
   // FIXME: add the song to jukebox here
-  return fmt.Sprint(data), err
+}
+
+func (c *Controller) Tell(user string, message string) {
+  c.tobot <- ToBot { message: message , user: user }
+}
+
+func (c *Controller) Channels(in FromBot, args string) {
+  channels, err := c.bot.Channels()
+  if err != nil {
+    fmt.Println("error")
+  }
+
+  chans := []string{}
+
+  for _,channel := range channels {
+    chans = append(chans, "#" + channel.Name)
+  }
+  str := strings.Join(chans,", ")
+  c.Tell(in.user, "I am in channels: " + str)
 }
 
 // Commands Here we strip off the first atom as the wanted command
 // and pack the rest into a string
-func (c *Controller) Commands(msg string) (string, error){
-  fmt.Println("Parsing command " + msg)
-  parsed := strings.SplitN(msg," ", 2)
+func (c *Controller) Commands(in FromBot)  {
+  fmt.Println("Parsing command " + in.message)
+  parsed := strings.SplitN(in.message," ", 2)
   cmd := parsed[0]
   args := ""
 
@@ -74,11 +112,13 @@ func (c *Controller) Commands(msg string) (string, error){
 
   // FIXME This should be a function table, not a switch
   // FIXME This should be in a controller together bot and jukebox together
-  switch {
-  case cmd == "add":
-    return AddSong(args)
+  switch(cmd) {
+    case "channels": 
+    c.Channels(in, args)
+
+  case "add":
+    c.AddSong(in,args)
   }
-  return "", errors.New("Unknown command " + cmd)
 }
 
 // ParseStrIntoMap way to do this.
