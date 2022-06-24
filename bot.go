@@ -1,7 +1,7 @@
 package main 
 import (
   "github.com/slack-go/slack"
-	"github.com/slack-go/slack/socketmode"
+  "github.com/slack-go/slack/socketmode"
   "github.com/slack-go/slack/slackevents"
   "encoding/json"
   "fmt"
