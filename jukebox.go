@@ -1,22 +1,38 @@
 package main
 import(
-//  "time"
   "gorm.io/driver/sqlite"
+  "gopkg.in/ini.v1"
   "gorm.io/gorm"
-//  "errors"
 )
 
+// JukeBox main data object
 type JukeBox struct {
   ready bool
   db *gorm.DB
+  config *ini.File
 }
 
-func (j *JukeBox) Init(config map[string]string) (error) {
-  db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
-  db.AutoMigrate(&Song{}, &PlayList{})
-  j.db = db
+//OpenSqlite Opens up sqlite
+func (j *JukeBox) OpenSqlite() (error) {
+  var err error
+
+  path := j.config.Section("database").Key("path").String()
+  j.db, err = gorm.Open(sqlite.Open(path), &gorm.Config{})
+  j.db.AutoMigrate(&Song{}, &PlayList{})
   if err == nil {
     j.ready = true
+  }
+  return err
+}
+
+//Init Set up the jukebox
+func (j *JukeBox) Init(config *ini.File) (error) {
+  var err error
+  j.config = config
+
+  switch {
+  case j.config.Section("database").Key("type").String() == "sqlite":
+    err =  j.OpenSqlite()
   }
   return err
 }
@@ -28,6 +44,7 @@ type PlayList struct {
   Songs []Song
 }
 
+// PlayHistory remembers when songs were played
 type PlayHistory struct {
   gorm.Model
   SongID int
@@ -45,26 +62,25 @@ type Song struct {
 }
 
 
-func (j *JukeBox) RandomOldSong() (Song) {
+// RandomSong picks a song not in the playlist
+func (j *JukeBox) RandomSong() (Song) {
   song := Song{}
   j.db.Take(&song)
   return song
 }
 
+// PickSong gets the next song for a playlist
 func (j *JukeBox) PickSong(channel string) (Song) {
   playlist := PlayList{Channel: channel}
   result := j.db.Where(playlist).First(&playlist)
   if result.RowsAffected == 0 {
-    return j.RandomOldSong()
+    return j.RandomSong()
   }
 
-  if result.RowsAffected == 0 {
-    return j.RandomOldSong()
-  }
   return Song{}
 }
 
-// Get jj
+// GetPlayList get a playlist 
 func (j *JukeBox) GetPlayList(channel string) (PlayList, error) {
   playlist := PlayList{Channel: channel}
   res := j.db.Where(playlist).FirstOrCreate(&playlist)
