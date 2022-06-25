@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/slack-go/slack v0.10.2
+	gopkg.in/ini.v1 v1.66.6
 	gorm.io/driver/sqlite v1.3.1
 	gorm.io/gorm v1.23.4
 )

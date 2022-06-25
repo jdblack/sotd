@@ -5,6 +5,7 @@ import (
   "github.com/slack-go/slack/slackevents"
   "encoding/json"
   "fmt"
+  "gopkg.in/ini.v1"
   "log"
   "os"
 )
@@ -14,7 +15,7 @@ type SlackBot struct {
   api *slack.Client
   client *socketmode.Client
   userID string
-  config map[string]string
+  config *ini.File
   frombot chan FromBot
   tobot chan ToBot
 }
@@ -47,9 +48,9 @@ func (s *SlackBot) connect() (error){
   fmt.Println("Connecting")
   fmt.Println(s.config)
   s.api = slack.New(
-    s.config["botToken"],
+    s.config.Section("slack").Key("botToken").String(),
     slack.OptionDebug(true),
-    slack.OptionAppLevelToken(s.config["appToken"]),
+    slack.OptionAppLevelToken(s.config.Section("slack").Key("appToken").String()),
     slack.OptionLog(log.New(os.Stdout, "api: ", log.Lshortfile|log.LstdFlags)),
   )
 
@@ -77,7 +78,7 @@ func (s *SlackBot) Run() {
 }
 
 // NewSotdBot Setup a new slackbot
-func NewSotdBot(config map[string]string, f chan FromBot, t chan ToBot) (*SlackBot,error) {
+func NewSotdBot(config *ini.File, f chan FromBot, t chan ToBot) (*SlackBot,error) {
   bot := SlackBot{config:config}
   bot.tobot = t
   bot.frombot = f

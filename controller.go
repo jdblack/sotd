@@ -3,6 +3,7 @@ import (
   "errors"
   "fmt"
   "strings"
+  "gopkg.in/ini.v1"
   "time"
 )
 
@@ -23,7 +24,7 @@ type ToBot struct {
 type Controller struct {
   frombot chan FromBot
   tobot chan ToBot
-  config map[string]string
+  config *ini.File
   bot *SlackBot
 }
 
