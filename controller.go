@@ -65,7 +65,7 @@ func (c *Controller) mainloop() {
 
 // AddSong blah
 // FIXME we need a jukebox too =)
-func (c *Controller) AddSong(in FromBot, args string) {
+func (c *Controller) addSong(in FromBot, args string) {
   data, err := ParseStrIntoMap(in.message)
 
   if err != nil {
@@ -80,6 +80,7 @@ func (c *Controller) AddSong(in FromBot, args string) {
   // FIXME: add the song to jukebox here
 }
 
+// Tell a user something
 func (c *Controller) Tell(user string, message string) {
   c.tobot <- ToBot { message: message , user: user }
 }
@@ -99,26 +100,28 @@ func (c *Controller) Channels(in FromBot, args string) {
   c.Tell(in.user, "I am in channels: " + str)
 }
 
-// Commands Here we strip off the first atom as the wanted command
-// and pack the rest into a string
-func (c *Controller) Commands(in FromBot)  {
-  fmt.Println("Parsing command " + in.message)
-  parsed := strings.SplitN(in.message," ", 2)
+func (c *Controller) parseCommand(in string) (string, string){
+  fmt.Println("Parsing command " + in)
+  parsed := strings.SplitN(in," ", 2)
   cmd := parsed[0]
   args := ""
 
   if len(parsed) == 2 {
     args = parsed[1]
   }
+  return cmd,args
+}
+
+// Commands Here we strip off the first atom as the wanted command
+// and pack the rest into a string
+func (c *Controller) Commands(in FromBot)  {
+  cmd, args := c.parseCommand(in.message)
 
   // FIXME This should be a function table, not a switch
   // FIXME This should be in a controller together bot and jukebox together
   switch(cmd) {
-    case "channels": 
-    c.Channels(in, args)
-
-  case "add":
-    c.AddSong(in,args)
+    case "channels": c.Channels(in, args)
+    case "add"     : c.AddSong(in,args)
   }
 }
 
