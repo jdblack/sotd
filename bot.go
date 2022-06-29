@@ -45,10 +45,11 @@ func (s *SlackBot) message(event *slackevents.MessageEvent, message string) (err
 func (s *SlackBot) connect() (error){
   fmt.Println("Connecting")
   fmt.Println(Config)
+  cfg := Config.Section("slack")
   s.api = slack.New(
-    Config.Section("slack").Key("botToken").String(),
+    cfg.Key("botToken").String(),
     slack.OptionDebug(true),
-    slack.OptionAppLevelToken(Config.Section("slack").Key("appToken").String()),
+    slack.OptionAppLevelToken(cfg.Key("appToken").String()),
     slack.OptionLog(log.New(os.Stdout, "api: ", log.Lshortfile|log.LstdFlags)),
   )
 
@@ -77,9 +78,7 @@ func (s *SlackBot) Run() {
 
 // NewSotdBot Setup a new slackbot
 func NewSotdBot(f chan FromBot, t chan ToBot) (*SlackBot,error) {
-  bot := SlackBot{}
-  bot.tobot = t
-  bot.frombot = f
+  bot := SlackBot{frombot: f, tobot: t}
   err := bot.connect()
   return &bot, err
 }
@@ -91,7 +90,6 @@ func (s *SlackBot) sendMessage() {
     case in := <- s.tobot :
       fmt.Println("============")
       fmt.Printf("%+v\n", in)
-      fmt.Println("============")
       fmt.Println("============")
       s.client.PostMessage(
         in.user,
