@@ -3,7 +3,6 @@ import (
   "errors"
   "fmt"
   "strings"
-  "gopkg.in/ini.v1"
   "time"
 )
 
@@ -24,13 +23,12 @@ type ToBot struct {
 type Controller struct {
   frombot chan FromBot
   tobot chan ToBot
-  config *ini.File
   bot *SlackBot
 }
 
-func (c *Controller) startBot() (error) {
+func (c *Controller) newBot() (error) {
   var err error
-  c.bot, err = NewSotdBot(c.config, c.frombot, c.tobot)
+  c.bot, err = NewSotdBot(c.frombot, c.tobot)
   if err != nil {
     return err
   }
@@ -41,9 +39,7 @@ func (c *Controller) startBot() (error) {
 func (c *Controller) start() {
   c.frombot  = make(chan FromBot, 100) 
   c.tobot = make(chan ToBot, 100)
-  fmt.Println("starting bot")
-  err := c.startBot()
-  fmt.Println("bot started")
+  err := c.newBot()
   if err != nil {
     panic(err)
   }
@@ -121,7 +117,7 @@ func (c *Controller) Commands(in FromBot)  {
   // FIXME This should be in a controller together bot and jukebox together
   switch(cmd) {
     case "channels": c.Channels(in, args)
-    case "add"     : c.AddSong(in,args)
+    case "add"     : c.addSong(in,args)
   }
 }
 

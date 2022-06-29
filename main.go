@@ -7,23 +7,25 @@ import (
   "gopkg.in/ini.v1"
 )
 
+// Config is the main ini config
+var Config *ini.File
 
-func load_config(src string) (*ini.File) {
+func loadConfig(src string) {
   fn, err := homedir.Expand(src)
   if err != nil {
     log.Println("Unable to parse filename " + src)
     os.Exit(1)
   }
-  config, err := ini.Load(fn)
+  Config, err = ini.Load(fn)
   if err != nil {
     fmt.Printf("Fail to read file: %v", err)
   }
-  return config
 }
+
 func main() {
   fmt.Println("Hi")
-  config := load_config("~/.sotd.ini")
-  controller := Controller{config: config}
+  loadConfig("~/.sotd.ini")
+  controller := Controller{}
   controller.start()
 }
 

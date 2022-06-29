@@ -1,7 +1,6 @@
 package main
 import(
   "gorm.io/driver/sqlite"
-  "gopkg.in/ini.v1"
   "gorm.io/gorm"
 )
 
@@ -9,14 +8,13 @@ import(
 type JukeBox struct {
   ready bool
   db *gorm.DB
-  config *ini.File
 }
 
 //OpenSqlite Opens up sqlite
 func (j *JukeBox) OpenSqlite() (error) {
   var err error
 
-  path := j.config.Section("database").Key("path").String()
+  path := Config.Section("database").Key("path").String()
   j.db, err = gorm.Open(sqlite.Open(path), &gorm.Config{})
   j.db.AutoMigrate(&Song{}, &PlayList{})
   if err == nil {
@@ -26,13 +24,12 @@ func (j *JukeBox) OpenSqlite() (error) {
 }
 
 //Init Set up the jukebox
-func (j *JukeBox) Init(config *ini.File) (error) {
+func (j *JukeBox) Init() (error) {
   var err error
-  j.config = config
+  dtype := Config.Section("database").Key("type").String() 
 
   switch {
-  case j.config.Section("database").Key("type").String() == "sqlite":
-    err =  j.OpenSqlite()
+    case dtype == "sqlite": err =  j.OpenSqlite()
   }
   return err
 }
