@@ -3,7 +3,6 @@ import (
   "github.com/slack-go/slack"
   "github.com/slack-go/slack/socketmode"
   "github.com/slack-go/slack/slackevents"
-  "encoding/json"
   "fmt"
   "log"
   "os"
@@ -18,16 +17,23 @@ type SlackBot struct {
   tobot chan ToBot
 }
 
+// FromBot messages from the Bot
+type FromBot struct {
+  message string
+  user string
+}
+
+// ToBot struct
+type ToBot struct {
+  message string
+  user string
+  channel string
+}
+
 // Channels  Get the channels list
 func (s *SlackBot) Channels() ([]slack.Channel, error) {
   up := slack.GetConversationsForUserParameters{UserID: s.userID }
   channels,_,err := s.api.GetConversationsForUser(&up)
-  for channel  := range channels {
-    fmt.Println(channels[channel])
-    m,_ := json.Marshal(channels[channel])
-    fmt.Println(string(m))
-    fmt.Println("============")
-  }
   return channels, err
 }
 
@@ -77,8 +83,11 @@ func (s *SlackBot) Run() {
 }
 
 // NewSotdBot Setup a new slackbot
-func NewSotdBot(f chan FromBot, t chan ToBot) (*SlackBot,error) {
-  bot := SlackBot{frombot: f, tobot: t}
+func NewSotdBot() (*SlackBot,error) {
+
+  frombot  := make(chan FromBot, 100) 
+  tobot := make(chan ToBot, 100)
+  bot := SlackBot{frombot: frombot, tobot: tobot}
   err := bot.connect()
   return &bot, err
 }

@@ -6,29 +6,14 @@ import (
   "time"
 )
 
-// FromBot messages from the Bot
-type FromBot struct {
-  message string
-  user string
-}
-
-// ToBot struct
-type ToBot struct {
-  message string
-  user string
-  channel string
-}
-
 // Controller struct
 type Controller struct {
-  frombot chan FromBot
-  tobot chan ToBot
   bot *SlackBot
 }
 
 func (c *Controller) newBot() (error) {
   var err error
-  c.bot, err = NewSotdBot(c.frombot, c.tobot)
+  c.bot, err = NewSotdBot()
   if err != nil {
     return err
   }
@@ -37,8 +22,6 @@ func (c *Controller) newBot() (error) {
 }
 
 func (c *Controller) start() {
-  c.frombot  = make(chan FromBot, 100) 
-  c.tobot = make(chan ToBot, 100)
   err := c.newBot()
   if err != nil {
     panic(err)
@@ -49,7 +32,7 @@ func (c *Controller) start() {
 func (c *Controller) mainloop() {
   for {
     select {
-    case in  := <- c.frombot :
+    case in  := <- c.bot.frombot :
       fmt.Printf("%+v\n", in)
       c.Commands(in) 
     case <-time.After(5 * time.Second):
@@ -78,7 +61,7 @@ func (c *Controller) addSong(in FromBot, args string) {
 
 // Tell a user something
 func (c *Controller) Tell(user string, message string) {
-  c.tobot <- ToBot { message: message , user: user }
+  c.bot.tobot <- ToBot { message: message , user: user }
 }
 
 func (c *Controller) Channels(in FromBot, args string) {
