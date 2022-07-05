@@ -23,9 +23,12 @@ func loadConfig(src string) {
 }
 
 func main() {
-  fmt.Println("Hi")
+  fmt.Println("Hi wtf")
   loadConfig("~/.sotd.ini")
   controller := Controller{}
+  fmt.Println("Running controller now")
+
   controller.start()
+  fmt.Println("Controller started")
 }
 

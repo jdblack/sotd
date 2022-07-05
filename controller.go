@@ -9,31 +9,31 @@ import (
 // Controller struct
 type Controller struct {
   bot *SlackBot
-}
-
-func (c *Controller) newBot() (error) {
-  var err error
-  c.bot, err = NewSotdBot()
-  if err != nil {
-    return err
-  }
-  go c.bot.Run()
-  return err
+  jukebox *Jukebox
 }
 
 func (c *Controller) start() {
-  err := c.newBot()
+  var err error
+  fmt.Println("Controller  starting")
+  c.bot, err = NewBot()
   if err != nil {
     panic(err)
   }
+  fmt.Println("Bot started")
+  c.bot.Run()
+  c.jukebox, err = NewJukebox()
+  if err != nil {
+    panic(err)
+  }
+  fmt.Println("Jukebox started")
   c.mainloop()
+
 }
 
 func (c *Controller) mainloop() {
   for {
     select {
     case in  := <- c.bot.frombot :
-      fmt.Printf("%+v\n", in)
       c.Commands(in) 
     case <-time.After(5 * time.Second):
       fmt.Println("Tick Tock")
@@ -41,6 +41,36 @@ func (c *Controller) mainloop() {
   }
 }
 
+
+func (c *Controller) sendHelp(in FromBot, args string) {
+  c.Tell(in.user, "I don't understand what you meant by" + in.message)
+}
+
+func (c *Controller) showPlaylist(name string) (string){
+    playlist,err := c.jukebox.GetPlaylist(name)
+    if err != nil {
+      return fmt.Sprintf("I could not find %s : %s", name, err)
+    }
+    return fmt.Sprintf("Name: #%s\nSchedule: %s", playlist.Channel, playlist.Cron)
+}
+
+func (c *Controller) playlist(in FromBot, message string) {
+  cmd, args, _ := strings.Cut(message," ")
+  switch(cmd) {
+  case "list":
+    playlists := c.jukebox.GetPlaylists() 
+    for _, pl := range playlists {
+      c.Tell(in.user, fmt.Sprintf("#%s : %s", pl.Channel, pl.Cron))
+    }
+  case "show":
+    c.Tell(in.user, c.showPlaylist(args))
+    return
+  }
+}
+
+func (c *Controller) hello(in FromBot, args string) {
+  c.Tell(in.user, "Hello back to you!")
+}
 
 // AddSong blah
 // FIXME we need a jukebox too =)
@@ -64,7 +94,20 @@ func (c *Controller) Tell(user string, message string) {
   c.bot.tobot <- ToBot { message: message , user: user }
 }
 
-func (c *Controller) Channels(in FromBot, args string) {
+func (c *Controller) addplaylist(in FromBot, args string) {
+  channels, _ := c.bot.Channels()
+  c.Tell(in.user, fmt.Sprintf( "I am in %d channels: ", len(channels)))
+  playlist, err := c.jukebox.GetPlaylist(args)
+  if err != nil {
+    c.Tell(in.user, fmt.Sprintf("I got error : %v", err))
+  }
+  c.Tell(in.user,fmt.Sprintf("I have playlist :  %v", playlist))
+
+
+}
+
+
+func (c *Controller) botChannels(in FromBot, args string) {
   channels, err := c.bot.Channels()
   if err != nil {
     fmt.Println("error")
@@ -79,28 +122,22 @@ func (c *Controller) Channels(in FromBot, args string) {
   c.Tell(in.user, "I am in channels: " + str)
 }
 
-func (c *Controller) parseCommand(in string) (string, string){
-  fmt.Println("Parsing command " + in)
-  parsed := strings.SplitN(in," ", 2)
-  cmd := parsed[0]
-  args := ""
-
-  if len(parsed) == 2 {
-    args = parsed[1]
-  }
-  return cmd,args
-}
-
 // Commands Here we strip off the first atom as the wanted command
 // and pack the rest into a string
 func (c *Controller) Commands(in FromBot)  {
-  cmd, args := c.parseCommand(in.message)
+  fmt.Printf("Parsing command: %v\n", in)
+  cmd, args, _ := strings.Cut(in.message," ")
 
   // FIXME This should be a function table, not a switch
   // FIXME This should be in a controller together bot and jukebox together
   switch(cmd) {
-    case "channels": c.Channels(in, args)
+    case "where": c.botChannels(in, args)
+    case "subscribe": c.addplaylist(in, args)
+    case "hello"   : c.hello(in,args)
+    case "hi"      : c.hello(in,args)
+    case "playlist" : c.playlist(in,args)
     case "add"     : c.addSong(in,args)
+    default        : c.sendHelp(in,args)
   }
 }
 

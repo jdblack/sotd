@@ -50,16 +50,16 @@ func (s *SlackBot) message(event *slackevents.MessageEvent, message string) (err
 
 func (s *SlackBot) connect() (error){
   fmt.Println("Connecting")
-  fmt.Println(Config)
   cfg := Config.Section("slack")
+  debug := cfg.HasKey("debug")
   s.api = slack.New(
     cfg.Key("botToken").String(),
-    slack.OptionDebug(true),
+    slack.OptionDebug(debug),
     slack.OptionAppLevelToken(cfg.Key("appToken").String()),
     slack.OptionLog(log.New(os.Stdout, "api: ", log.Lshortfile|log.LstdFlags)),
   )
 
-  fmt.Println("sockemode starting")
+  fmt.Println("Bot.Connect: sockemode starting")
   outputLog  := log.New(os.Stdout, "socketmode: ", log.Lshortfile|log.LstdFlags)
 
   s.client = socketmode.New( s.api, socketmode.OptionLog( outputLog),)
@@ -70,7 +70,7 @@ func (s *SlackBot) connect() (error){
     return err
   }
   s.userID = authTest.UserID
-  fmt.Println("who am I", s.userID)
+  fmt.Println("My userID is ",s.userID)
 
   return nil
 }
@@ -79,27 +79,28 @@ func (s *SlackBot) connect() (error){
 func (s *SlackBot) Run() {
   go s.eventHandler()
   go s.sendMessage()
-  s.client.Run()
+  go s.client.Run()
 }
 
-// NewSotdBot Setup a new slackbot
-func NewSotdBot() (*SlackBot,error) {
+// NewBot Setup a new slackbot
+func NewBot() (*SlackBot,error) {
 
   frombot  := make(chan FromBot, 100) 
   tobot := make(chan ToBot, 100)
   bot := SlackBot{frombot: frombot, tobot: tobot}
   err := bot.connect()
+  if err != nil {
+    fmt.Println("ERROR BOT")
+    fmt.Println(err)
+  }
   return &bot, err
 }
 
 func (s *SlackBot) sendMessage() {
   for {
-    fmt.Println("Start message listener")
+    fmt.Println("Ready to send message")
     select {
     case in := <- s.tobot :
-      fmt.Println("============")
-      fmt.Printf("%+v\n", in)
-      fmt.Println("============")
       s.client.PostMessage(
         in.user,
         slack.MsgOptionText(in.message,false),
@@ -113,11 +114,12 @@ func (s *SlackBot) sendMessage() {
 func (s *SlackBot) handleMessage(event *slackevents.MessageEvent) {
   if s.userID == event.User { return }             // Bot ignore thyself
   if event.SubType == "message_changed" { return } // fuhget the past
-  fmt.Printf("%+v\n", event)
+  fmt.Printf("Messsage received: %s:%s\n", event.User, event.Text)
   s.frombot <- FromBot { message: event.Text, user: event.User}
 }
 
 func (s *SlackBot) eventHandler() {
+  fmt.Println("Start event handler")
   for envelope := range s.client.Events {
     switch(envelope.Type) {
     case socketmode.EventTypeConnecting:
