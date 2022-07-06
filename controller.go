@@ -2,6 +2,7 @@ package main
 import (
   "errors"
   "fmt"
+  "regexp"
   "strings"
   "time"
 )
@@ -72,21 +73,53 @@ func (c *Controller) hello(in FromBot, args string) {
   c.Tell(in.user, "Hello back to you!")
 }
 
+func (c *Controller) contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}
+
+
 // AddSong blah
 // FIXME we need a jukebox too =)
 func (c *Controller) addSong(in FromBot, args string) {
-  data, err := ParseStrIntoMap(in.message)
+  fmt.Println("I got string :" + args + ":")
+  s := regexp.MustCompile(" +").Split(args,3)
+  _, channel := c.bot.ParseChannel(s[0])
+  fmt.Println("Looking for channel " + channel)
 
+  channels, _ := c.bot.ChannelNames()
+  if ! c.contains(channels, channel) {
+    msg := fmt.Sprintf("You need to invite me to %s first!", s[0])
+    c.Tell(in.user, msg)
+    return
+  }
+
+  if len(s) != 3 {
+    c.Tell(in.user, "To add a song, message me again with the following: ")
+    msg :=
+    "add #channel https://some-song/url " +
+    "A description of your song"
+    c.Tell(in.user, msg)
+    return
+  }
+
+  song := Song{
+    User: in.user,
+    URL: s[1],
+    Description: s[2],
+  }
+
+
+  err := c.jukebox.AddSong(song,channel)
   if err != nil {
     panic("Error adding " + in.message)
   }
-  res := []string{}
-  for key, element := range data {
-    res = append(res, key + ":" + element)
-  }
 
-  c.Tell(in.user, "Adding song" + strings.Join(res, ", "))
-  // FIXME: add the song to jukebox here
+
 }
 
 // Tell a user something
@@ -102,24 +135,20 @@ func (c *Controller) addplaylist(in FromBot, args string) {
     c.Tell(in.user, fmt.Sprintf("I got error : %v", err))
   }
   c.Tell(in.user,fmt.Sprintf("I have playlist :  %v", playlist))
-
-
 }
 
 
-func (c *Controller) botChannels(in FromBot, args string) {
-  channels, err := c.bot.Channels()
+func (c *Controller) listChannels(in FromBot, args string) () {
+  channels, err := c.bot.ChannelNames()
+  chans := []string{}
   if err != nil {
     fmt.Println("error")
   }
 
-  chans := []string{}
-
   for _,channel := range channels {
-    chans = append(chans, "#" + channel.Name)
+    chans = append(chans, "#" + channel)
   }
-  str := strings.Join(chans,", ")
-  c.Tell(in.user, "I am in channels: " + str)
+  c.Tell(in.user, "I am in channels" + strings.Join(chans, ", "))
 }
 
 // Commands Here we strip off the first atom as the wanted command
@@ -131,7 +160,7 @@ func (c *Controller) Commands(in FromBot)  {
   // FIXME This should be a function table, not a switch
   // FIXME This should be in a controller together bot and jukebox together
   switch(cmd) {
-    case "where": c.botChannels(in, args)
+    case "where": c.listChannels(in, args)
     case "subscribe": c.addplaylist(in, args)
     case "hello"   : c.hello(in,args)
     case "hi"      : c.hello(in,args)

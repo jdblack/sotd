@@ -3,6 +3,7 @@ import (
   "github.com/slack-go/slack"
   "github.com/slack-go/slack/socketmode"
   "github.com/slack-go/slack/slackevents"
+  "strings"
   "fmt"
   "log"
   "os"
@@ -30,7 +31,24 @@ type ToBot struct {
   channel string
 }
 
-// Channels  Get the channels list
+// ChannelNames  Get the  list
+func (s *SlackBot) ChannelNames() ([]string, error) {
+  up := slack.GetConversationsForUserParameters{UserID: s.userID }
+  channels,_,err := s.api.GetConversationsForUser(&up)
+  chans := []string{}
+  for _, channel := range channels {
+    chans = append(chans, "#" + channel.Name)
+  }
+
+  return chans, err
+}
+
+func (s *SlackBot) ParseChannel(channel string) (string,string) {
+  cleaned := strings.Trim(channel, "<>")
+  res := strings.Split(cleaned, "|")
+  return res[0], "#" +res[1]
+}
+
 func (s *SlackBot) Channels() ([]slack.Channel, error) {
   up := slack.GetConversationsForUserParameters{UserID: s.userID }
   channels,_,err := s.api.GetConversationsForUser(&up)

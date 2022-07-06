@@ -7,6 +7,38 @@ import(
   "time"
 )
 
+type Jukebox struct {
+  ready bool
+  db *gorm.DB
+  cron *gocron.Scheduler
+}
+
+// Playlist is self explanative
+type Playlist struct {
+  gorm.Model
+  Channel string
+  Cron string `gorm:"default:0 18 * * 1-5"`
+  LastPlayed time.Time
+  Songs []Song `gorm:"many2many:song_playlist;"`
+}
+
+// Song is self descripitive
+type Song struct {
+  gorm.Model
+  URL string
+  Description string
+  User string
+  Playlists []Playlist `gorm:"many2many:song_playlist;"`
+}
+
+
+// PlayHistory remembers when songs were played
+type PlayHistory struct {
+  gorm.Model
+  Song Song
+  Playlist Playlist
+}
+
 //Init Set up the jukebox
 func (j *Jukebox) Init() (error) {
   var err error
@@ -98,25 +130,21 @@ func (j *Jukebox) CreateSong(songIn map[string]string) (Song, error)  {
     User: songIn["user"],
   }
 
-  res := j.db.Create(song)
-  if res.Error != nil {
-    return song, res.Error
-  }
   return song, nil
 }
 
 // AddSong creates a song and adds it to a channel
-func (j *Jukebox) AddSong(songIn map[string]string, channel string) (error){
-  playlist, err := j.GetPlaylist(channel)
+func (j *Jukebox) AddSong(song Song, channel string) (error){
+  playlist, err := j.ensurePlaylist(channel)
   if err != nil  {
     return err
   }
-  song, err := j.CreateSong(songIn)
-  if err != nil {
-    return err
+  res := j.db.Create(&song)
+  if res.Error != nil {
+    return res.Error
   }
 
-  j.db.Model(&playlist).Association("Songs").Append(song)
+  j.db.Model(&playlist).Association("Songs").Append(&song)
 
   return nil
 }
