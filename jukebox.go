@@ -3,7 +3,6 @@ import(
   "gorm.io/driver/sqlite"
   "gorm.io/gorm"
   "github.com/go-co-op/gocron"
-  "fmt"
   "time"
 )
 
@@ -11,13 +10,23 @@ type Jukebox struct {
   ready bool
   db *gorm.DB
   cron *gocron.Scheduler
+  Playset chan Play
 }
 
-// Playlist is self explanative
+type Play struct {
+  URL string
+  user string
+  channel string
+  chanid string
+  description string
+}
+
+// Playlist is self explanativ
 type Playlist struct {
   gorm.Model
   Channel string
-  Cron string `gorm:"default:0 18 * * 1-5"`
+  //Cron string `gorm:"default:0 18 * * 1-5"`
+  Cron string `gorm:"default:* * * * *"`
   LastPlayed time.Time
   Songs []Song `gorm:"many2many:song_playlist;"`
 }
@@ -44,6 +53,8 @@ func (j *Jukebox) Init() (error) {
   var err error
 
   dtype := Config.Section("database").Key("type").String() 
+
+  j.Playset  = make(chan Play, 100) 
 
   j.cron = gocron.NewScheduler(time.UTC)
   j.cron.StartAsync()
@@ -117,8 +128,13 @@ func (j *Jukebox) schedulePlaylists() {
   j.cron.Clear()
   j.db.Find(&playlists)
   for _, pl := range playlists {
-    j.cron.Cron(pl.Cron).Tag(pl.Channel).Do(fmt.Printf("%v", pl))
+    j.cron.Cron(pl.Cron).Tag(pl.Channel).Do( j.spinASong(pl) )
   }
+}
+
+func (j *Jukebox) spinASong(pl Playlist ) (error){
+  //FIXME  We need to add to the playset channel 
+  return nil
 }
 
 // CreateSong creates a song if it doesnt exist
@@ -134,6 +150,7 @@ func (j *Jukebox) CreateSong(songIn map[string]string) (Song, error)  {
 }
 
 // AddSong creates a song and adds it to a channel
+//FIXME We need to send channelid & channel name, not just channel name
 func (j *Jukebox) AddSong(song Song, channel string) (error){
   playlist, err := j.ensurePlaylist(channel)
   if err != nil  {

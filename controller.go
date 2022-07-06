@@ -84,7 +84,6 @@ func (c *Controller) contains(s []string, str string) bool {
 
 
 // AddSong blah
-// FIXME we need a jukebox too =)
 func (c *Controller) addSong(in FromBot, args string) {
   fmt.Println("I got string :" + args + ":")
   s := regexp.MustCompile(" +").Split(args,3)
@@ -113,13 +112,13 @@ func (c *Controller) addSong(in FromBot, args string) {
     Description: s[2],
   }
 
-
+  //FIXME We need to send channelid & channel name, not just channel name
   err := c.jukebox.AddSong(song,channel)
   if err != nil {
-    panic("Error adding " + in.message)
+    c.Tell(in.user, "I had trouble adding " + song.URL + " to " + channel)
+    return
   }
-
-
+    c.Tell(in.user, "I have added " + song.URL + " to " + channel)
 }
 
 // Tell a user something
