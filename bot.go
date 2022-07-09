@@ -116,7 +116,6 @@ func NewBot() (*SlackBot,error) {
 
 func (s *SlackBot) sendMessage() {
   for {
-    fmt.Println("Ready to send message")
     select {
     case in := <- s.tobot :
       s.client.PostMessage(
