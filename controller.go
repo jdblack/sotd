@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -22,12 +21,11 @@ type menuItem struct {
 
 func (c *Controller) start() {
 	c.mainMenu = map[string]menuItem{
-		"hello":     {f: c.hello, h: "Say hello"},
-		"hi":        {f: c.hello, h: "Alias for hello"},
-		"channels":  {f: c.listChannels, h: "List Channels"},
-		"playlist":  {f: c.playlist, h: "Run a playlist subcommand"},
-		"subscribe": {f: c.addplaylist, h: "Create aplaylist for a channel"},
-		"add":       {f: c.addSong, h: "Add a song to a play"},
+		"hello":    {f: c.hello, h: "Say hello"},
+		"hi":       {f: c.hello, h: "Alias for hello"},
+		"add":      {f: c.addSong, h: "Add a song to a play"},
+		"playlist": {f: c.playlist, h: "Run a playlist subcommand"},
+		"channels": {f: c.listChannels, h: "List Channels"},
 	}
 	var err error
 	fmt.Println("Controller  starting")
@@ -61,21 +59,22 @@ func (c *Controller) sendHelp(in FromBot, args string) {
 	c.Tell(in.user, "I don't understand what you meant by"+in.message)
 }
 
-func (c *Controller) showPlaylist(name string) string {
-	pl, err := c.jukebox.GetPlaylist(name)
+func (c *Controller) showPlaylist(in FromBot, args string) {
+	_, ch := c.bot.ParseChannel(args)
+	pl, err := c.jukebox.GetPlaylist(ch)
 	if err != nil {
-		return fmt.Sprintf("I could not find %s : %s", name, err)
+		c.Tell(in.user, fmt.Sprintf("I could not find %s : %s", ch, err))
+		return
 	}
-	m := []string{}
-	m = append(m, fmt.Sprintf("Request: %s", name))
-	m = append(m, fmt.Sprintf("Name: %s", pl.Channel))
-	m = append(m, fmt.Sprintf("Play Schedule: %s", pl.Cron))
-	fmt.Println(fmt.Sprintf("%+v", pl.Songs))
+	m := []string{
+		fmt.Sprintf("Request: %s", ch),
+		fmt.Sprintf("Name: %s", pl.Channel),
+		fmt.Sprintf("Play Schedule: %s", pl.Cron),
+	}
 	for _, s := range pl.Songs {
-		fmt.Println("I Got something")
 		m = append(m, fmt.Sprintf("<@%s> : %s %s", s.User, s.URL, s.Description))
 	}
-	return strings.Join(m, "\n")
+	c.Tell(in.user, strings.Join(m, "\n"))
 }
 
 func (c *Controller) playlist(in FromBot, message string) {
@@ -87,8 +86,7 @@ func (c *Controller) playlist(in FromBot, message string) {
 			c.Tell(in.user, fmt.Sprintf("#%s : %s", pl.Channel, pl.Cron))
 		}
 	case "show":
-		_, ch := c.bot.ParseChannel(args)
-		c.Tell(in.user, c.showPlaylist(ch))
+		c.showPlaylist(in, args)
 		return
 	}
 }
@@ -108,10 +106,8 @@ func (c *Controller) contains(s []string, str string) bool {
 
 // AddSong blah
 func (c *Controller) addSong(in FromBot, args string) {
-	fmt.Println("I got string :" + args + ":")
 	s := regexp.MustCompile(" +").Split(args, 3)
 	_, channel := c.bot.ParseChannel(s[0])
-	fmt.Println("Looking for channel " + channel)
 
 	channels, _ := c.bot.ChannelNames()
 	if !c.contains(channels, channel) {
@@ -172,10 +168,9 @@ func (c *Controller) listChannels(in FromBot, args string) {
 	c.Tell(in.user, "I am in channels"+strings.Join(chans, ", "))
 }
 
-// Commands Here we strip off the first atom as the wanted command
-// and pack the rest into a string
+//Commands is the main command handler. To add a command, add to the
+//jump table in start()
 func (c *Controller) Commands(in FromBot) {
-	fmt.Printf("Parsing command: %v\n", in)
 	cmd, args, _ := strings.Cut(in.message, " ")
 
 	if opt, ok := c.mainMenu[cmd]; ok {
@@ -185,6 +180,7 @@ func (c *Controller) Commands(in FromBot) {
 	}
 }
 
+//Display the help for a menu
 func (c *Controller) printHelp(in FromBot, menu map[string]menuItem) {
 	msg := []string{"Help for  in.message"}
 
@@ -192,19 +188,4 @@ func (c *Controller) printHelp(in FromBot, menu map[string]menuItem) {
 		msg = append(msg, fmt.Sprintf("%s : %s", name, data.h))
 	}
 	c.Tell(in.user, strings.Join(msg, "\n"))
-}
-
-// ParseStrIntoMap way to do this.
-func ParseStrIntoMap(in string) (map[string]string, error) {
-	answer := make(map[string]string)
-	atoms := strings.Split(in, ";")
-	for _, atom := range atoms {
-		subs := strings.SplitN(atom, "=", 2)
-		if len(subs) < 2 {
-			return nil, errors.New("Incorrect song format. Please ask me for help \"" + atom + "\"")
-		}
-		answer[strings.TrimSpace(subs[0])] = strings.TrimSpace(subs[1])
-	}
-
-	return answer, nil
 }
