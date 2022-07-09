@@ -10,11 +10,25 @@ import (
 
 // Controller struct
 type Controller struct {
-	bot     *SlackBot
-	jukebox *Jukebox
+	bot      *SlackBot
+	jukebox  *Jukebox
+	mainMenu map[string]menuItem
+}
+
+type menuItem struct {
+	h string                // The help to give
+	f func(FromBot, string) // Callout function
 }
 
 func (c *Controller) start() {
+	c.mainMenu = map[string]menuItem{
+		"hello":     {f: c.hello, h: "Say hello"},
+		"hi":        {f: c.hello, h: "Alias for hello"},
+		"channels":  {f: c.listChannels, h: "List Channels"},
+		"playlist":  {f: c.playlist, h: "Run a playlist subcommand"},
+		"subscribe": {f: c.addplaylist, h: "Create aplaylist for a channel"},
+		"add":       {f: c.addSong, h: "Add a song to a play"},
+	}
 	var err error
 	fmt.Println("Controller  starting")
 	c.bot, err = NewBot()
@@ -164,24 +178,20 @@ func (c *Controller) Commands(in FromBot) {
 	fmt.Printf("Parsing command: %v\n", in)
 	cmd, args, _ := strings.Cut(in.message, " ")
 
-	// FIXME This should be a function table, not a switch
-	// FIXME This should be in a controller together bot and jukebox together
-	switch cmd {
-	case "where":
-		c.listChannels(in, args)
-	case "subscribe":
-		c.addplaylist(in, args)
-	case "hello":
-		c.hello(in, args)
-	case "hi":
-		c.hello(in, args)
-	case "playlist":
-		c.playlist(in, args)
-	case "add":
-		c.addSong(in, args)
-	default:
-		c.sendHelp(in, args)
+	if opt, ok := c.mainMenu[cmd]; ok {
+		opt.f(in, args)
+	} else {
+		c.printHelp(in, c.mainMenu)
 	}
+}
+
+func (c *Controller) printHelp(in FromBot, menu map[string]menuItem) {
+	msg := []string{"Help for  in.message"}
+
+	for name, data := range menu {
+		msg = append(msg, fmt.Sprintf("%s : %s", name, data.h))
+	}
+	c.Tell(in.user, strings.Join(msg, "\n"))
 }
 
 // ParseStrIntoMap way to do this.
