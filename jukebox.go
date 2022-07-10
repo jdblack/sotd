@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/go-co-op/gocron"
+	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -62,17 +64,38 @@ func (j *Jukebox) Init() error {
 
 	switch {
 	case dtype == "sqlite":
-		err = j.OpenSqlite()
+		err = j.openSQLite()
+	case dtype == "mysql":
+		err = j.openMySQL()
 	}
 	return err
 }
 
-//OpenSqlite Opens up sqlite
-func (j *Jukebox) OpenSqlite() error {
+//openSQLite Opens up sqlite
+func (j *Jukebox) openSQLite() error {
 	var err error
 
 	path := Config.Section("database").Key("path").String()
 	j.db, err = gorm.Open(sqlite.Open(path), &gorm.Config{})
+	j.db.AutoMigrate(&Song{}, &Playlist{})
+	if err == nil {
+		j.ready = true
+	}
+	return err
+}
+
+func (j *Jukebox) openMySQL() error {
+	var err error
+
+	host := Config.Section("database").Key("host").String()
+	port := Config.Section("database").Key("port").String()
+	user := Config.Section("database").Key("user").String()
+	pass := Config.Section("database").Key("pass").String()
+	db := Config.Section("database").Key("db").String()
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, pass, host, port, db)
+	dsn += "?charset=utf8mb4&parseTime=True&loc=Local"
+
+	j.db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	j.db.AutoMigrate(&Song{}, &Playlist{})
 	if err == nil {
 		j.ready = true

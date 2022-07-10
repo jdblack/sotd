@@ -7,11 +7,13 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/slack-go/slack v0.10.2
 	gopkg.in/ini.v1 v1.66.6
+	gorm.io/driver/mysql v1.3.4
 	gorm.io/driver/sqlite v1.3.1
 	gorm.io/gorm v1.23.4
 )
 
 require (
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.4 // indirect
