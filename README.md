@@ -7,14 +7,20 @@ Interation with the bot primarily happens via private message. You can send
 the following commands to the bot to control song of the day for your channel
 
 
-: `hi` or `hello` 
+### General commands
+
+- `hi` or `hello` 
 Check if the bot ia answering
-: `channels` 
+- `channels` 
 List the channels that the Bot is in
+
+### Song Management commands
 
 - `add #channel URL Your description of a song`
 add a song to sotd bot
 - `song rm URL` [TODO] Completely remove a song from SOTDbot.  Intended for those NSFW moments
+
+### Playlist Commands
 
 - `playlist list` List out all of the channel playlists
 - `playlist show CHANNEL_NAME` Show the playlist 
