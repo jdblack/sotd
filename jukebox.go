@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -59,16 +60,20 @@ func (j *Jukebox) Init() error {
 
 	j.Playset = make(chan Play, 100)
 
-	j.cron = gocron.NewScheduler(time.UTC)
-	j.cron.StartAsync()
-
 	switch {
 	case dtype == "sqlite":
 		err = j.openSQLite()
 	case dtype == "mysql":
 		err = j.openMySQL()
 	}
-	return err
+	if err != nil {
+		return err
+	}
+
+	j.cron = gocron.NewScheduler(time.UTC)
+	j.schedulePlaylists()
+	j.cron.StartAsync()
+	return nil
 }
 
 //openSQLite Opens up sqlite
@@ -137,7 +142,7 @@ func (j *Jukebox) GetPlaylist(channel string) (Playlist, error) {
 
 func (j *Jukebox) ensurePlaylist(channel string) (Playlist, error) {
 	playlist := Playlist{Channel: channel}
-	res := j.db.Where(playlist).FirstOrCreate(&playlist)
+	res := j.db.Preload("Songs").Where(playlist).FirstOrCreate(&playlist)
 	return playlist, res.Error
 }
 
@@ -149,15 +154,29 @@ func (j *Jukebox) GetPlaylists() []Playlist {
 
 func (j *Jukebox) schedulePlaylists() {
 	var playlists []Playlist
-	j.cron.Clear()
 	j.db.Find(&playlists)
 	for _, pl := range playlists {
-		j.cron.Cron(pl.Cron).Tag(pl.Channel).Do(j.spinASong(pl))
+		fmt.Printf("Set up cron schedule for %s with %s\n", pl.Channel, pl.Cron)
+		channel := pl.Channel
+		j.cron.Cron(pl.Cron).Tag(pl.Channel).Do(func() {
+			j.spinPlaylist(channel)
+		})
 	}
 }
 
-func (j *Jukebox) spinASong(pl Playlist) error {
-	//FIXME  We need to add to the playset channel
+func (j *Jukebox) spinPlaylist(name string) error {
+	//FIXME We need to add to the playset channel
+	//FIXME Remove played song
+	fmt.Printf("Spin a song from  %+s\n", name)
+	channel, err := j.ensurePlaylist(name)
+	if err != nil {
+		return err
+	}
+
+	song := channel.Songs[rand.Intn(len(channel.Songs))]
+
+	fmt.Printf("I have %d  songs to choose from, but I chose %d, %s \n", len(channel.Songs), song.ID, song.URL)
+
 	return nil
 }
 

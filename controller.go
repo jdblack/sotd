@@ -9,9 +9,10 @@ import (
 
 // Controller struct
 type Controller struct {
-	bot      *SlackBot
-	jukebox  *Jukebox
-	mainMenu map[string]menuItem
+	bot         *SlackBot
+	jukebox     *Jukebox
+	mainMenu    map[string]menuItem
+	idleTimeout int
 }
 
 type menuItem struct {
@@ -20,6 +21,7 @@ type menuItem struct {
 }
 
 func (c *Controller) start() {
+	c.idleTimeout = 60
 	c.mainMenu = map[string]menuItem{
 		"hello":    {f: c.hello, h: "Say hello"},
 		"hi":       {f: c.hello, h: "Alias for hello"},
@@ -49,8 +51,8 @@ func (c *Controller) mainloop() {
 		select {
 		case in := <-c.bot.frombot:
 			c.Commands(in)
-		case <-time.After(5 * time.Second):
-			fmt.Println("Tick Tock")
+		case <-time.After(time.Duration(c.idleTimeout) * time.Second):
+			fmt.Printf("All quiet here for the last %d seconds\n", c.idleTimeout)
 		}
 	}
 }
