@@ -1,4 +1,13 @@
-Song of the day 
+Song of the day bot
+
+SOTD Slack bot that provides daily (or more) links to a daily song of the day.
+The bot provides a separate playlist for channel that it is.   Channel
+participants are then widely encouraged to contribute songs to the channel
+playlist.
+
+The playlist for each channel is randomized, allowing users to add many of
+their favorite songs at one time without hogging the front of the playlist
+queue.
 
 # Usage
 
@@ -16,8 +25,11 @@ List the channels that the Bot is in
 
 ### Song Management commands
 
-- `add #channel URL Your description of a song`
-add a song to sotd bot
+- `add #channel URL An optional user explanation for why they contributed this song`
+add ads a new song to the playlist for the given channel. The song will also be used as
+backfill for channels that have empty playlists
+- `add! #channel URL Song description` - Add a song to the playlist even if the
+  song has previously been added to sotd
 - `song rm URL` [TODO] Completely remove a song from SOTDbot.  Intended for those NSFW moments
 
 ### Playlist Commands
@@ -41,8 +53,7 @@ for Minute, Hour, Day of Month, Month and Day of week
 
 The main intent is for each channel to set the best time for SOTD for their own
 channel playlist, but the functiality is there if you want to set your cron up
-for certain months or days of the month too
-
+for certain months or days of the month too.  
 
 
 # Installation
@@ -73,18 +84,24 @@ database path
 
 path - the path of the sqlite database.  A temporary database can be created in
 memory by setting a path of "file::memory:?cache=shared"
+```
+[database]
+type = "sqlite"
+# path = "file::memory:?cache=shared" # temporary in-memory db for testing
+path = "/var/lib/sotdbot.db"
+```
 
 Mysql
 ------
 
 The mysql connector requires 5 options;   host, port, user, pass and db.  
 
-
+```
 [database]
 type = "mysql"
 user = "username"
 host = "mysql-server"
 pass = "password"
 db   = "database name"
-
+```
 
