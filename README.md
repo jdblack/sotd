@@ -79,11 +79,10 @@ Sotd supports both SQLite and MySQL which may be chosen by setting type under
 Sqlite
 --------
 
-The sqlite connector requires onoe argument under the database section, the
-database path
+The sqlite connector requires  single argument under the database section, the
+path of the database. A temporary database can be created in memory by setting
+a path of "file::memory:?cache=shared"
 
-path - the path of the sqlite database.  A temporary database can be created in
-memory by setting a path of "file::memory:?cache=shared"
 ```
 [database]
 type = "sqlite"
@@ -104,4 +103,14 @@ host = "mysql-server"
 pass = "password"
 db   = "database name"
 ```
+
+
+# Dedication
+
+This project is dedicated to my close friends Belmin, Brandon, Brian, Drew,
+Jaysen, Jeff, Jeremy and Jhurani.  To quote Martin Gore,  you made "All the
+things I detest, I will almost like"  Thanks for making the last half decade of
+my life such an adventure.  Call me when you need me. =)
+
+
 
