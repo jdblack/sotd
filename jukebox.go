@@ -128,6 +128,7 @@ func (j *Jukebox) ensurePlaylist(channel string) (Playlist, error) {
 	return playlist, res.Error
 }
 
+//GetPlaylists gets all the playlists
 func (j *Jukebox) GetPlaylists() []Playlist {
 	var playlists []Playlist
 	j.db.Find(&playlists)
@@ -159,6 +160,11 @@ func (j *Jukebox) spinPlaylist(name string) error {
 		song := channel.Songs[rand.Intn(len(channel.Songs))]
 		fmt.Printf("I chose %d:%s from %d\n", song.ID, song.URL, len(channel.Songs))
 		j.Playset <- Play{channel: name, song: song}
+		fmt.Printf("Deassociate song from channel %s : %+v\n", name, song)
+		err = j.db.Model(&channel).Association("Songs").Delete(&song)
+		if err != nil {
+			fmt.Printf("I had an errorw with song (%s) %s : %+v\n", err, name, song)
+		}
 		return nil
 
 	}
