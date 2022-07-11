@@ -7,28 +7,17 @@ Interation with the bot primarily happens via private message. You can send
 the following commands to the bot to control song of the day for your channel
 
 
-:`hi` or `hello`
-Check if the bot ia answering
+-`hi` or `hello` Check if the bot ia answering
+-`channels` List the channels that the Bot is in
 
-:`channels`
-List the channels that the Bot is in
-
-`add #channel URL Your description of a song`
+- `add #channel URL Your description of a song`
 add a song to sotd bot
+-`song rm URL` [TODO] Completely remove a song from SOTDbot.  Intended for those NSFW moments
 
-:`song rm URL`
-[TODO] Completely remove a song from SOTDbot.  Intended for those NSFW moments
-
-:`playlist list`
-List out all of the channel playlists
-:`playlist show CHANNEL_NAME`
-Show the playlist 
-:`playlist delete CHANNEL_NAME`
-[TODO] tell the bot to delete a channel
-playlist and leave the channel. 
-:`playlist cron CHANNEL_NAME  new crontab
-[TODO] Set a new schedule for the
-specified playlist. See Cron below for more information
+-`playlist list` List out all of the channel playlists
+-`playlist show CHANNEL_NAME` Show the playlist 
+-`playlist delete CHANNEL_NAME` [TODO] tell the bot to delete a channel playlist and leave the channel. 
+-`playlist cron CHANNEL_NAME  new crontab [TODO] Set a new schedule for the specified playlist. See Cron below for more information
 
 
 
