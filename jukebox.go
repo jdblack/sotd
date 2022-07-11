@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Jukebox is the main jukebox struct
 type Jukebox struct {
 	ready   bool
 	db      *gorm.DB
@@ -18,12 +20,10 @@ type Jukebox struct {
 	Playset chan Play
 }
 
+// Play is a instruction to play a song in a channel
 type Play struct {
-	URL         string
-	user        string
-	channel     string
-	chanid      string
-	description string
+	channel string
+	song    Song
 }
 
 // Playlist is self explanativ
@@ -115,24 +115,6 @@ func NewJukebox() (*Jukebox, error) {
 	return &j, err
 }
 
-// RandomSong picks a song not in the playlist
-func (j *Jukebox) RandomSong() Song {
-	song := Song{}
-	j.db.Take(&song)
-	return song
-}
-
-// PickSong gets the next song for a playlist
-func (j *Jukebox) PickSong(channel string) Song {
-	playlist := Playlist{Channel: channel}
-	result := j.db.Where(playlist).First(&playlist)
-	if result.RowsAffected == 0 {
-		return j.RandomSong()
-	}
-
-	return Song{}
-}
-
 // GetPlaylist get a playlist
 func (j *Jukebox) GetPlaylist(channel string) (Playlist, error) {
 	playlist := Playlist{Channel: channel}
@@ -173,9 +155,23 @@ func (j *Jukebox) spinPlaylist(name string) error {
 		return err
 	}
 
-	song := channel.Songs[rand.Intn(len(channel.Songs))]
+	if len(channel.Songs) > 0 {
+		song := channel.Songs[rand.Intn(len(channel.Songs))]
+		fmt.Printf("I chose %d:%s from %d\n", song.ID, song.URL, len(channel.Songs))
+		j.Playset <- Play{channel: name, song: song}
+		return nil
 
-	fmt.Printf("I have %d  songs to choose from, but I chose %d, %s \n", len(channel.Songs), song.ID, song.URL)
+	}
+
+	var songs []Song
+	j.db.Find(&songs)
+	if len(songs) == 0 {
+		return errors.New("Unable to find new song to play")
+	}
+
+	song := songs[rand.Intn(len(songs))]
+	j.Playset <- Play{channel: name, song: song}
+	fmt.Printf("%+v\n", song)
 
 	return nil
 }

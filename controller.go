@@ -51,6 +51,11 @@ func (c *Controller) mainloop() {
 		select {
 		case in := <-c.bot.frombot:
 			c.Commands(in)
+		case play := <-c.jukebox.Playset:
+			s := play.song
+			msg := fmt.Sprintf("Please thank <@%s> for today's SOTD %s\n", s.User, s.URL)
+			msg += s.Description
+			c.Tell(play.channel, msg)
 		case <-time.After(time.Duration(c.idleTimeout) * time.Second):
 			fmt.Printf("All quiet here for the last %d seconds\n", c.idleTimeout)
 		}
