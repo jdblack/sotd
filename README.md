@@ -1,13 +1,13 @@
 Song of the day 
 
 # Usage
-==============
 
 Interation with the bot primarily happens via private message. You can send
 the following commands to the bot to control song of the day for your channel
 
 
 ### General commands
+-------------------
 
 - `hi` or `hello` 
 Check if the bot ia answering
@@ -45,11 +45,8 @@ for certain months or days of the month too
 
 
 
-
-
-
 # Installation
-=============
+
 Create ~/.sotd.ini with the following contents:
 
 ```
@@ -64,7 +61,6 @@ appToken=xapp-#-###########-#############-######################################
 
 
 # Databases
-============
 
 Sotd supports both SQLite and MySQL which may be chosen by setting type under
 [Database] to "sqlite" or "mysql" 
