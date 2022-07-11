@@ -1,4 +1,4 @@
-Song of the day bot
+# Song of the day bot
 
 SOTD Slack bot that provides daily (or more) links to a daily song of the day.
 The bot provides a separate playlist for channel that it is.   Channel
@@ -9,7 +9,7 @@ The playlist for each channel is randomized, allowing users to add many of
 their favorite songs at one time without hogging the front of the playlist
 queue.
 
-# Usage
+## Usage
 
 Interation with the bot primarily happens via private message. You can send
 the following commands to the bot to control song of the day for your channel
@@ -41,7 +41,7 @@ backfill for channels that have empty playlists
 
 
 
-# Crontab
+## Crontab
 
 Each channel can be scheduled independently of one another. The pattern is a
 stanadrd cron format (https://en.wikipedia.org/wiki/Cron) with numeric fields
@@ -56,7 +56,7 @@ channel playlist, but the functiality is there if you want to set your cron up
 for certain months or days of the month too.  
 
 
-# Installation
+## Installation
 
 Create ~/.sotd.ini with the following contents:
 
@@ -71,7 +71,7 @@ appToken=xapp-#-###########-#############-######################################
 ```
 
 
-# Databases
+## Databases
 
 Sotd supports both SQLite and MySQL which may be chosen by setting type under
 [Database] to "sqlite" or "mysql" 
@@ -105,7 +105,7 @@ db   = "database name"
 ```
 
 
-# Dedication
+## Dedication
 
 This project is dedicated to my close friends Belmin, Brandon, Brian, Drew,
 Jaysen, Jeff, Jeremy and Jhurani.  To quote Martin Gore,  you made "All the
