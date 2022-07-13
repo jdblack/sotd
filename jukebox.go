@@ -31,9 +31,8 @@ type Playlist struct {
 	gorm.Model
 	Channel string
 	//Cron string `gorm:"default:0 18 * * 1-5"`
-	Cron       string `gorm:"default:* * * * *"`
-	LastPlayed time.Time
-	Songs      []Song `gorm:"many2many:song_playlist;"`
+	Cron  string `gorm:"default:* * * * *"`
+	Songs []Song `gorm:"many2many:song_playlist;"`
 }
 
 // Song is self descripitive
@@ -45,8 +44,8 @@ type Song struct {
 	Playlists   []Playlist `gorm:"many2many:song_playlist;"`
 }
 
-// PlayHistory remembers when songs were played
-type PlayHistory struct {
+// Playhistory remembers when songs were played
+type Playhistory struct {
 	gorm.Model
 	Song     Song
 	Playlist Playlist
@@ -148,8 +147,6 @@ func (j *Jukebox) schedulePlaylists() {
 }
 
 func (j *Jukebox) spinPlaylist(name string) error {
-	//FIXME We need to add to the playset channel
-	//FIXME Remove played song
 	fmt.Printf("Spin a song from  %+s\n", name)
 	channel, err := j.ensurePlaylist(name)
 	if err != nil {
@@ -160,6 +157,16 @@ func (j *Jukebox) spinPlaylist(name string) error {
 		song := channel.Songs[rand.Intn(len(channel.Songs))]
 		fmt.Printf("I chose %d:%s from %d\n", song.ID, song.URL, len(channel.Songs))
 		j.Playset <- Play{channel: name, song: song}
+
+		var play = Playhistory{
+			Song:     song,
+			Playlist: channel,
+		}
+		res := j.db.Create(&play)
+		if res.Error != nil {
+			return res.Error
+		}
+
 		fmt.Printf("Deassociate song from channel %s : %+v\n", name, song)
 		err = j.db.Model(&channel).Association("Songs").Delete(&song)
 		if err != nil {
@@ -195,7 +202,6 @@ func (j *Jukebox) CreateSong(songIn map[string]string) (Song, error) {
 }
 
 // AddSong creates a song and adds it to a channel
-//FIXME We need to send channelid & channel name, not just channel name
 func (j *Jukebox) AddSong(song Song, channel string) error {
 	playlist, err := j.ensurePlaylist(channel)
 	if err != nil {

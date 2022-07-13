@@ -138,7 +138,6 @@ func (c *Controller) addSong(in FromBot, args string) {
 		Description: s[2],
 	}
 
-	//FIXME We need to send channelid & channel name, not just channel name
 	err := c.jukebox.AddSong(song, channel)
 	if err != nil {
 		c.Tell(in.user, "I had trouble adding "+song.URL+" to "+channel)
