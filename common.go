@@ -2,8 +2,22 @@ package main
 
 import (
 	"errors"
+	"log"
+	"os"
 	"strings"
+
+	"github.com/mitchellh/go-homedir"
+	"gopkg.in/ini.v1"
 )
+
+func loadConfig(src string) (*ini.File, error) {
+	fn, err := homedir.Expand(src)
+	if err != nil {
+		log.Println("Unable to parse filename " + src)
+		os.Exit(1)
+	}
+	return ini.Load(fn)
+}
 
 // ParseStrIntoMap Takes a string in the format of  this=that;this=theother and
 // Makes a map from it
