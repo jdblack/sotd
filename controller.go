@@ -37,7 +37,7 @@ func (c *Controller) start() {
 	}
 	fmt.Println("Bot started")
 	c.bot.Run()
-	c.jukebox, err = NewJukebox()
+	c.jukebox, err = NewJukebox(Config)
 	if err != nil {
 		panic(err)
 	}

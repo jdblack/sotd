@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron"
+	"gopkg.in/ini.v1"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -17,6 +18,7 @@ type Jukebox struct {
 	ready   bool
 	db      *gorm.DB
 	cron    *gocron.Scheduler
+	config  *ini.File
 	Playset chan Play
 }
 
@@ -52,10 +54,11 @@ type Playhistory struct {
 }
 
 //Init Set up the jukebox
-func (j *Jukebox) Init() error {
+func (j *Jukebox) Init(cfg *ini.File) error {
 	var err error
+	j.config = cfg
 
-	dtype := Config.Section("database").Key("type").String()
+	dtype := j.config.Section("database").Key("type").String()
 
 	j.Playset = make(chan Play, 100)
 
@@ -79,7 +82,7 @@ func (j *Jukebox) Init() error {
 func (j *Jukebox) openSQLite() error {
 	var err error
 
-	path := Config.Section("database").Key("path").String()
+	path := j.config.Section("database").Key("path").String()
 	j.db, err = gorm.Open(sqlite.Open(path), &gorm.Config{})
 	j.db.AutoMigrate(&Song{}, &Playlist{})
 	if err == nil {
@@ -91,11 +94,11 @@ func (j *Jukebox) openSQLite() error {
 func (j *Jukebox) openMySQL() error {
 	var err error
 
-	host := Config.Section("database").Key("host").String()
-	port := Config.Section("database").Key("port").String()
-	user := Config.Section("database").Key("user").String()
-	pass := Config.Section("database").Key("pass").String()
-	db := Config.Section("database").Key("db").String()
+	host := j.config.Section("database").Key("host").String()
+	port := j.config.Section("database").Key("port").String()
+	user := j.config.Section("database").Key("user").String()
+	pass := j.config.Section("database").Key("pass").String()
+	db := j.config.Section("database").Key("db").String()
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, pass, host, port, db)
 	dsn += "?charset=utf8mb4&parseTime=True&loc=Local"
 
@@ -108,9 +111,9 @@ func (j *Jukebox) openMySQL() error {
 }
 
 // NewJukebox creates a new jukebox
-func NewJukebox() (*Jukebox, error) {
+func NewJukebox(cfg *ini.File) (*Jukebox, error) {
 	j := Jukebox{}
-	err := j.Init()
+	err := j.Init(cfg)
 	return &j, err
 }
 

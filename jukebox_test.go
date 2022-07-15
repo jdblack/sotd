@@ -2,10 +2,11 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHelloName(t *testing.T) {
-	if 1 != 1 {
-		t.Fatalf("Testing does not work")
-	}
+	cfg, _ := loadConfig("testing/test1.ini")
+	assert.NotNil(t, cfg)
 }
