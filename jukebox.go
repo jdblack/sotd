@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math/rand"
+	"net/http"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -51,6 +54,32 @@ type Playhistory struct {
 	gorm.Model
 	Song     Song
 	Playlist Playlist
+}
+
+func (j *Jukebox) songsFromJSON(user string, channel string, url string) error {
+	var songs []Song
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal([]byte(body), &songs)
+	if err != nil {
+		return err
+	}
+	for _, song := range songs {
+		song.User = user
+		err = j.AddSong(song, channel)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 //Init Set up the jukebox
@@ -215,7 +244,7 @@ func (j *Jukebox) AddSong(song Song, channel string) error {
 		return res.Error
 	}
 
-	j.db.Model(&playlist).Association("Songs").Append(&song)
+	err = j.db.Model(&playlist).Association("Songs").Append(&song)
 
-	return nil
+	return err
 }
