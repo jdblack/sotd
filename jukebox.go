@@ -54,28 +54,28 @@ type Playhistory struct {
 	Playlist Playlist
 }
 
-func (j *Jukebox) songsFromJSON(user string, channel string, path string) error {
+func (j *Jukebox) songsFromJSON(user string, channel string, path string) ([]Song, error) {
 	var songs []Song
 	var body []byte
 	var err error
 
 	body, err = LoadFile(path)
 	if err != nil {
-		return err
+		return songs, err
 	}
 
 	err = json.Unmarshal(body, &songs)
 	if err != nil {
-		return err
+		return songs, err
 	}
 	for _, song := range songs {
 		song.User = user
 		err = j.AddSong(song, channel)
 		if err != nil {
-			return err
+			return songs, err
 		}
 	}
-	return nil
+	return songs, nil
 }
 
 //Init Set up the jukebox

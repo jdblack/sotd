@@ -25,7 +25,8 @@ func TestInit(t *testing.T) {
 
 func TestLoadFile(t *testing.T) {
 	jb := testNewJB()
-	err := jb.songsFromJSON("testuser", "testchan", "testing/songs.json")
+	songs, err := jb.songsFromJSON("testuser", "testchan", "testing/songs.json")
+	assert.NotNil(t, songs)
 	require.NoError(t, err)
 
 	pls := jb.GetPlaylists()
@@ -33,12 +34,13 @@ func TestLoadFile(t *testing.T) {
 
 	pl, err := jb.GetPlaylist("testchan")
 	require.NoError(t, err)
-	assert.Greater(t, len(pl.Songs), 1)
+	require.Equal(t, len(pl.Songs), len(songs))
 }
 
 func TestLoadURL(t *testing.T) {
 	jb := testNewJB()
-	err := jb.songsFromJSON("testuser", "testchan", testurl)
+	songs, err := jb.songsFromJSON("testuser", "testchan", testurl)
+	assert.NotNil(t, songs)
 	require.NoError(t, err)
 
 	pls := jb.GetPlaylists()
@@ -47,5 +49,5 @@ func TestLoadURL(t *testing.T) {
 	pl, err := jb.GetPlaylist("testchan")
 	require.NoError(t, err)
 	require.NotNil(t, pl)
-	require.Greater(t, len(pl.Songs), 1)
+	require.Equal(t, len(pl.Songs), len(songs))
 }
