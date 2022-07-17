@@ -26,6 +26,7 @@ func (c *Controller) start() {
 		"hello":    {f: c.hello, h: "Say hello"},
 		"hi":       {f: c.hello, h: "Alias for hello"},
 		"add":      {f: c.addSong, h: "Add a song to a play"},
+		"delete":   {f: c.deleteSong, h: "Delete all songs with provided URL"},
 		"playlist": {f: c.playlist, h: "Run a playlist subcommand"},
 		"channels": {f: c.listChannels, h: "List Channels"},
 	}
@@ -109,6 +110,17 @@ func (c *Controller) contains(s []string, str string) bool {
 		}
 	}
 	return false
+}
+
+// deleteSong is given an url and will delete those songs
+func (c *Controller) deleteSong(in FromBot, args string) {
+
+	count, err := c.jukebox.DeleteSongByURL(args)
+	if err != nil {
+		c.Tell(in.user, "I wasnt able to delete that")
+		return
+	}
+	c.Tell(in.user, fmt.Sprintf("I deleted %d songs", count))
 }
 
 // AddSong blah
