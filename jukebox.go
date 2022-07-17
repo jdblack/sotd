@@ -60,6 +60,9 @@ func (j *Jukebox) songsFromJSON(user string, channel string, path string) error 
 	var err error
 
 	body, err = LoadFile(path)
+	if err != nil {
+		return err
+	}
 
 	err = json.Unmarshal(body, &songs)
 	if err != nil {

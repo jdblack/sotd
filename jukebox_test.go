@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var testurl = "https://for-your-perusal.s3.amazonaws.com/sotd/songs_test1.json"
@@ -18,20 +19,33 @@ func TestInit(t *testing.T) {
 	cfg, err := loadConfig("testing/test1.ini")
 	assert.Nil(t, err)
 	jukebox, err := NewJukebox(cfg)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, jukebox)
 }
 
-func TestLoadSongs(t *testing.T) {
+func TestLoadFile(t *testing.T) {
 	jb := testNewJB()
-	err := jb.songsFromJSON("testuser", "testchan", testurl)
-	assert.NoError(t, err)
+	err := jb.songsFromJSON("testuser", "testchan", "testing/songs.json")
+	require.NoError(t, err)
 
 	pls := jb.GetPlaylists()
 	assert.Equal(t, 1, len(pls))
 
 	pl, err := jb.GetPlaylist("testchan")
-	assert.NoError(t, err)
-	assert.NotNil(t, pl)
+	require.NoError(t, err)
 	assert.Greater(t, len(pl.Songs), 1)
+}
+
+func TestLoadURL(t *testing.T) {
+	jb := testNewJB()
+	err := jb.songsFromJSON("testuser", "testchan", testurl)
+	require.NoError(t, err)
+
+	pls := jb.GetPlaylists()
+	require.Equal(t, 1, len(pls))
+
+	pl, err := jb.GetPlaylist("testchan")
+	require.NoError(t, err)
+	require.NotNil(t, pl)
+	require.Greater(t, len(pl.Songs), 1)
 }
