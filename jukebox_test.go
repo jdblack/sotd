@@ -32,7 +32,10 @@ func TestLoadFile(t *testing.T) {
 	pls := jb.GetPlaylists()
 	assert.Equal(t, 1, len(pls))
 
-	pl, err := jb.GetPlaylist("testchan")
+	pl, err := jb.GetPlaylist("nochannel")
+	require.Error(t, err)
+
+	pl, err = jb.GetPlaylist("testchan")
 	require.NoError(t, err)
 	require.Equal(t, len(pl.Songs), len(songs))
 }
@@ -43,11 +46,24 @@ func TestLoadURL(t *testing.T) {
 	assert.NotNil(t, songs)
 	require.NoError(t, err)
 
-	pls := jb.GetPlaylists()
-	require.Equal(t, 1, len(pls))
-
 	pl, err := jb.GetPlaylist("testchan")
 	require.NoError(t, err)
-	require.NotNil(t, pl)
 	require.Equal(t, len(pl.Songs), len(songs))
+}
+
+func TestDeleteSong(t *testing.T) {
+	jb := testNewJB()
+	_, err := jb.songsFromJSON("testuser", "testchan", "testing/songs.json")
+	require.NoError(t, err)
+
+	pl, err := jb.GetPlaylist("testchan")
+	oldlen := len(pl.Songs)
+	targetSong := pl.Songs[0]
+
+	jb.DeleteSongByURL(targetSong.URL)
+	assert.Equal(t, oldlen, len(pl.Songs)) //Because its stale
+
+	pl, err = jb.GetPlaylist("testchan")
+	assert.Equal(t, oldlen-1, len(pl.Songs))
+
 }
