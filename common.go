@@ -2,7 +2,9 @@ package main
 
 import (
 	"errors"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 
@@ -33,4 +35,25 @@ func ParseStrIntoMap(in string) (map[string]string, error) {
 	}
 
 	return answer, nil
+}
+
+// LoadFile loads a file from either the filesystem or http
+func LoadFile(path string) ([]byte, error) {
+	var body []byte
+	var err error
+
+	if !strings.HasPrefix(strings.ToLower(path), "http") {
+		return os.ReadFile(path)
+	}
+
+	resp, err := http.Get(path)
+	if err != nil {
+		return body, err
+	}
+	defer resp.Body.Close()
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return body, err
+	}
+	return body, nil
 }

@@ -18,20 +18,20 @@ func TestInit(t *testing.T) {
 	cfg, err := loadConfig("testing/test1.ini")
 	assert.Nil(t, err)
 	jukebox, err := NewJukebox(cfg)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.NotNil(t, jukebox)
 }
 
 func TestLoadSongs(t *testing.T) {
 	jb := testNewJB()
 	err := jb.songsFromJSON("testuser", "testchan", testurl)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pls := jb.GetPlaylists()
 	assert.Equal(t, 1, len(pls))
 
 	pl, err := jb.GetPlaylist("testchan")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.NotNil(t, pl)
 	assert.Greater(t, len(pl.Songs), 1)
 }

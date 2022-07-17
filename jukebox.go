@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math/rand"
-	"net/http"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -56,19 +54,14 @@ type Playhistory struct {
 	Playlist Playlist
 }
 
-func (j *Jukebox) songsFromJSON(user string, channel string, url string) error {
+func (j *Jukebox) songsFromJSON(user string, channel string, path string) error {
 	var songs []Song
+	var body []byte
+	var err error
 
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal([]byte(body), &songs)
+	body, err = LoadFile(path)
+
+	err = json.Unmarshal(body, &songs)
 	if err != nil {
 		return err
 	}
