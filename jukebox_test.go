@@ -33,7 +33,7 @@ func TestLoadFile(t *testing.T) {
 	assert.Equal(t, 1, len(pls))
 
 	pl, err := jb.GetPlaylist("nochannel")
-	require.Error(t, err)
+	require.NotNil(t, err)
 
 	pl, err = jb.GetPlaylist("testchan")
 	require.NoError(t, err)

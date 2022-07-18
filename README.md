@@ -110,9 +110,9 @@ Design
 
 ```mermaid
 graph TD;
-   bot --> controller : FromBot channel
-   controller --> bot : ToBot channel
-   jukebox --> controller : Playset channel
+   bot-- FromBot ch ---> controller
+   controller-- ToBot ch --->bot
+   jukebox-- controller: Playset channel --->controller
 ```
 
 

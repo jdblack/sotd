@@ -102,7 +102,7 @@ func (c *Controller) playlist(in FromBot, message string) {
 }
 
 func (c *Controller) hello(in FromBot, args string) {
-	c.Tell(in.user, "Hello back to you!")
+	c.Tell(in.user, "Hello back!")
 }
 
 func (c *Controller) contains(s []string, str string) bool {
@@ -137,17 +137,18 @@ func (c *Controller) addSong(in FromBot, args string) {
 		return
 	}
 
-	if len(s) != 3 {
+	if len(s) < 2 {
 		c.Tell(in.user, "To add a song, message me again with the following: ")
 		msg :=
 			"add #channel https://some-song/url " +
-				"A description of your song"
+				"_An optional description of your song_"
 		c.Tell(in.user, msg)
 		return
 	}
 
 	song := Song{
 		User:        in.user,
+		RealName:    in.fullName,
 		URL:         s[1],
 		Description: s[2],
 	}

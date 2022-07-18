@@ -44,7 +44,9 @@ type Song struct {
 	URL         string
 	Description string
 	User        string
-	Playlists   []Playlist `gorm:"many2many:song_playlist;"`
+	RealName    string
+
+	Playlists []Playlist `gorm:"many2many:song_playlist;"`
 }
 
 // Playhistory remembers when songs were played
@@ -215,18 +217,6 @@ func (j *Jukebox) spinPlaylist(name string) error {
 	fmt.Printf("%+v\n", song)
 
 	return nil
-}
-
-// CreateSong creates a song if it doesnt exist
-func (j *Jukebox) CreateSong(songIn map[string]string) (Song, error) {
-
-	song := Song{
-		URL:         songIn["url"],
-		Description: songIn["description"],
-		User:        songIn["user"],
-	}
-
-	return song, nil
 }
 
 //DeleteChannel removes a channel
