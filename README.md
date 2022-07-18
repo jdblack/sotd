@@ -110,7 +110,7 @@ Design
 
 ```mermaid
 graph TD;
-   slack api-- event handler --->bot
+   {slack api}-- event handler --->bot
    bot-- FromBot ch ---> controller
    controller-- ToBot ch --->bot
    jukebox-- controller: Playset channel --->controller
