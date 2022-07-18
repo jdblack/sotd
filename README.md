@@ -109,7 +109,7 @@ Design
 --------
 
 ```mermaid
-graphite TD;
+graph TD;
    bot --> controller : FromBot channel
    controller --> bot : ToBot channel
    jukebox --> controller : Playset channel
