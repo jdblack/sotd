@@ -105,6 +105,17 @@ db   = "database name"
 ```
 
 
+Design
+--------
+
+```mermaid
+graphite TD;
+   bot --> controller : FromBot channel
+   controller --> bot : ToBot channel
+   jukebox --> controller : Playset channel
+```
+
+
 ## Dedication
 
 This project is dedicated to my close friends Belmin, Brandon, Brian, Drew,

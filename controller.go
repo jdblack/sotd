@@ -93,6 +93,8 @@ func (c *Controller) playlist(in FromBot, message string) {
 		for _, pl := range playlists {
 			c.Tell(in.user, fmt.Sprintf("#%s : %s", pl.Channel, pl.Cron))
 		}
+	case "leave":
+		c.jukebox.DeleteChannel(args)
 	case "show":
 		c.showPlaylist(in, args)
 		return

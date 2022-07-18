@@ -229,6 +229,13 @@ func (j *Jukebox) CreateSong(songIn map[string]string) (Song, error) {
 	return song, nil
 }
 
+//DeleteChannel removes a channel
+func (j *Jukebox) DeleteChannel(channel string) (int64, error) {
+	var pl Playlist
+	res := j.db.Where("Channel LIKE ?", channel).Delete(&pl)
+	return res.RowsAffected, res.Error
+}
+
 // DeleteSongByURL finds and removes all songs that have this url
 func (j *Jukebox) DeleteSongByURL(url string) (int64, error) {
 	var songs []Song
