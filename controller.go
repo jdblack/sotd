@@ -50,17 +50,18 @@ func (c *Controller) start() {
 
 }
 
-func (c *Controller) SpinAPlay(play Play) {
+func (c *Controller) spinAPlay(play Play) {
 	desc := "from"
 	s := play.song
 	msg := "\n\n\nTime for *Sotd*!"
 	if play.backfill {
-		msg += " Your channel is out of songs, so we stole one for ya "
+		msg += " _Your channel is out of songs, so we stole one for ya_ "
 	}
+	msg += ": " + s.URL
 	if len(s.Description) > 1 {
 		desc = s.Description
 	}
-	msg += fmt.Sprintf("\n\n    _*%s -- %s *_\n\n", desc, s.RealName)
+	msg += fmt.Sprintf("\n\n```\n\n         %s -- %s\n\n```\n\n", desc, s.RealName)
 
 	c.Tell(play.channel, msg)
 }
@@ -71,7 +72,7 @@ func (c *Controller) mainloop() {
 		case in := <-c.bot.frombot:
 			c.Commands(in)
 		case play := <-c.jukebox.Playset:
-			c.SpinAPlay(play)
+			c.spinAPlay(play)
 		case <-time.After(time.Duration(c.idleTimeout) * time.Second):
 			fmt.Printf("All quiet here for the last %d seconds\n", c.idleTimeout)
 		}
@@ -99,7 +100,7 @@ func (c *Controller) showPlaylist(in FromBot, args string) {
 		fmt.Sprintf("Play Schedule: %s", pl.Cron),
 	}
 	for _, s := range pl.Songs {
-		m = append(m, fmt.Sprintf("<@%s> : %s %s", s.User, s.URL, s.Description))
+		m = append(m, fmt.Sprintf("%s : `%s` %s", s.User, s.URL, s.Description))
 	}
 	c.Tell(in.user, strings.Join(m, "\n"))
 }
