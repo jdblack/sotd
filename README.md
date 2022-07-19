@@ -9,7 +9,7 @@ channels.
 The playlist for each channel is randomized, allowing users to add many of
 their favorite songs at one time without hogging the front of the playlist
 queue. Prolific users are able to swamp out other users,  so it's 
-recommended that you widely encourage many people to participate!
+advisable to encourage many users to participate!
 
 ## Usage
 
@@ -20,28 +20,29 @@ the following commands to the bot to control song of the day for your channel
 ### Bot commands
 -------------------
 
-This bot only listens for private messaages for security purposes and does 
-not need to be invited into any channels in order to function.
+This bot only listens for private messaages for security purposes. There is
+also no need to invite Sotd into any channels for it to work, as it can 
+post blindly into channels.
 
 
 
 
-**add CHANNEL URL [OPTIONAL DESCRIPTION]**  Add a song to a play with optional
+**add CHANNEL URL [OPTIONAL DESCRIPTION]**  - Add a song to a play with optional
 description
 
-**delete URL** Delete song matching URL
+**delete URL**  - Delete song matching URL
 
-**playlists** List all running playlists
+**playlists** - List all running playlists
 
-**load CHANNEL URL** Import a json playlist from an URL.  Imports will be
-credited to the importer
+**load CHANNEL URL**  - Import a json playlist from an URL.  Imports will be
+credited to the importer (See Bulk Importing Songs, below)
 
-**stop CHANNEL** Tell SOTD to remove a playlist for a channel. The songs will be
+**stop CHANNEL** - Tell SOTD to remove a playlist for a channel. The songs will be
 saved for backfill, but the playlist will be gone, gone, gone
 
-**show CHANNEL** Show the playlist for a given channel
+**show CHANNEL** - Show the playlist for a given channel
 
-**hello** Say hello
+**hello** - Say hello
 
 
 ## Crontab
@@ -60,7 +61,7 @@ for certain months or days of the month too.
 
 ## Bulk Importing Songs
 
-Songs can be imported over HTTP via a json formatted list. The list should have
+Songs can be imported over HTTP/S via a json formatted list. The list should have
 the following structure:
 
 ```
@@ -76,6 +77,10 @@ the following structure:
 ]
 ```
 
+You can instruct the bot to import the bot to import this list to the playlist of your choice
+by messaging it  `load #your_channel_name https://some.url/here.json`.  Imported songs will
+be credited to you, so I'd suggest being thoughtful about introducting NSFW songs in your 
+work environment.
 
 
 ## Installation
