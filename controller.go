@@ -68,7 +68,11 @@ func (c *Controller) sendHelp(in FromBot, args string) {
 }
 
 func (c *Controller) showPlaylist(in FromBot, args string) {
-	_, ch := c.bot.ParseChannel(args)
+	_, ch, err := ParseChannel(args)
+	if err != nil {
+		c.Tell(in.user, fmt.Sprintf(err.Error()))
+		return
+	}
 	pl, err := c.jukebox.GetPlaylist(ch)
 	if err != nil {
 		c.Tell(in.user, fmt.Sprintf("I could not find %s : %s", ch, err))
@@ -91,10 +95,18 @@ func (c *Controller) playlist(in FromBot, message string) {
 	case "list":
 		playlists := c.jukebox.GetPlaylists()
 		for _, pl := range playlists {
-			c.Tell(in.user, fmt.Sprintf("#%s : %s", pl.Channel, pl.Cron))
+			c.Tell(in.user, fmt.Sprintf("%s : %s", pl.Channel, pl.Cron))
 		}
+	case "load":
+		songs, err := c.jukebox.loadSongs(in, args)
+		if err != nil {
+			c.Tell(in.user, "I was unable to load the songs:"+err.Error())
+			return
+		}
+		c.Tell(in.user, fmt.Sprintf("I loaded %d songs", len(songs)))
+
 	case "leave":
-		c.jukebox.DeleteChannel(args)
+		c.jukebox.DeleteChannel(in, args)
 	case "show":
 		c.showPlaylist(in, args)
 		return
@@ -128,7 +140,11 @@ func (c *Controller) deleteSong(in FromBot, args string) {
 // AddSong blah
 func (c *Controller) addSong(in FromBot, args string) {
 	s := regexp.MustCompile(" +").Split(args, 3)
-	_, channel := c.bot.ParseChannel(s[0])
+	_, channel, err := ParseChannel(s[0])
+	if err != nil {
+		c.Tell(in.user, err.Error())
+		return
+	}
 
 	channels, _ := c.bot.ChannelNames()
 	if !c.contains(channels, channel) {
@@ -153,7 +169,7 @@ func (c *Controller) addSong(in FromBot, args string) {
 		Description: s[2],
 	}
 
-	err := c.jukebox.AddSong(song, channel)
+	err = c.jukebox.AddSong(song, channel)
 	if err != nil {
 		c.Tell(in.user, "I had trouble adding "+song.URL+" to "+channel)
 		return

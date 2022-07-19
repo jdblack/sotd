@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
@@ -44,12 +43,6 @@ func (s *SlackBot) ChannelNames() ([]string, error) {
 	}
 
 	return chans, err
-}
-
-func (s *SlackBot) ParseChannel(channel string) (string, string) {
-	cleaned := strings.Trim(channel, "<>")
-	res := strings.Split(cleaned, "|")
-	return res[0], "#" + res[1]
 }
 
 func (s *SlackBot) Channels() ([]slack.Channel, error) {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -25,8 +26,8 @@ type Jukebox struct {
 
 // Play is a instruction to play a song in a channel
 type Play struct {
-	channel string
-	song    Song
+	channel string `gorm:"foreignkey:ID"`
+	song    Song   `gorm:"foreignkey:ID"`
 }
 
 // Playlist is self explanativ
@@ -34,32 +35,43 @@ type Playlist struct {
 	gorm.Model
 	Channel string
 	//Cron string `gorm:"default:0 18 * * 1-5"`
-	Cron  string `gorm:"default:* * * * *"`
-	Songs []Song `gorm:"many2many:song_playlist;"`
-}
-
-// Song is self descripitive
-type Song struct {
-	gorm.Model
-	URL         string
-	Description string
-	User        string
-	RealName    string
-
-	Playlists []Playlist `gorm:"many2many:song_playlist;"`
+	Cron          string `gorm:"default:* * * * *"`
+	Songs         []Song `gorm:"many2many:song_playlist;"`
+	Playhistories []Playhistory
 }
 
 // Playhistory remembers when songs were played
 type Playhistory struct {
 	gorm.Model
-	Song     Song
-	Playlist Playlist
+	SongID     uint
+	PlaylistID uint
 }
 
-func (j *Jukebox) songsFromJSON(user string, channel string, path string) ([]Song, error) {
+// Song is self descripitive
+type Song struct {
+	gorm.Model
+	URL           string
+	Description   string
+	User          string
+	RealName      string
+	Playhistories []Playhistory
+
+	Playlists []Playlist `gorm:"many2many:song_playlist;"`
+}
+
+func (j *Jukebox) loadSongs(in FromBot, args string) ([]Song, error) {
 	var songs []Song
 	var body []byte
 	var err error
+	first, second, found := strings.Cut(args, " ")
+	if !found {
+		return songs, errors.New("Please give me channel and path")
+	}
+	_, channel, err := ParseChannel(first)
+	if err != nil {
+		return songs, err
+	}
+	path := ParseURL(second)
 
 	body, err = LoadFile(path)
 	if err != nil {
@@ -71,7 +83,9 @@ func (j *Jukebox) songsFromJSON(user string, channel string, path string) ([]Son
 		return songs, err
 	}
 	for _, song := range songs {
-		song.User = user
+		song.User = in.user
+		song.RealName = in.fullName
+		fmt.Printf("Adding song %+v\n", song)
 		err = j.AddSong(song, channel)
 		if err != nil {
 			return songs, err
@@ -111,7 +125,7 @@ func (j *Jukebox) openSQLite() error {
 
 	path := j.config.Section("database").Key("path").String()
 	j.db, err = gorm.Open(sqlite.Open(path), &gorm.Config{})
-	j.db.AutoMigrate(&Song{}, &Playlist{})
+	j.db.AutoMigrate(&Song{}, &Playlist{}, &Playhistory{})
 	if err == nil {
 		j.ready = true
 	}
@@ -189,8 +203,8 @@ func (j *Jukebox) spinPlaylist(name string) error {
 		j.Playset <- Play{channel: name, song: song}
 
 		var play = Playhistory{
-			Song:     song,
-			Playlist: channel,
+			SongID:     song.ID,
+			PlaylistID: channel.ID,
 		}
 		res := j.db.Create(&play)
 		if res.Error != nil {
@@ -200,10 +214,10 @@ func (j *Jukebox) spinPlaylist(name string) error {
 		fmt.Printf("Deassociate song from channel %s : %+v\n", name, song)
 		err = j.db.Model(&channel).Association("Songs").Delete(&song)
 		if err != nil {
-			fmt.Printf("I had an errorw with song (%s) %s : %+v\n", err, name, song)
+			fmt.Printf("I had an error with song (%s) %s : %+v\n", err, name, song)
 		}
-		return nil
 
+		return nil
 	}
 
 	var songs []Song
@@ -220,7 +234,7 @@ func (j *Jukebox) spinPlaylist(name string) error {
 }
 
 //DeleteChannel removes a channel
-func (j *Jukebox) DeleteChannel(channel string) (int64, error) {
+func (j *Jukebox) DeleteChannel(in FromBot, channel string) (int64, error) {
 	var pl Playlist
 	res := j.db.Where("Channel LIKE ?", channel).Delete(&pl)
 	return res.RowsAffected, res.Error

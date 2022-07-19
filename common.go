@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -41,6 +42,7 @@ func ParseStrIntoMap(in string) (map[string]string, error) {
 func LoadFile(path string) ([]byte, error) {
 	var body []byte
 	var err error
+	fmt.Printf("Loading from path %s\n", path)
 
 	if !strings.HasPrefix(strings.ToLower(path), "http") {
 		return os.ReadFile(path)
@@ -56,4 +58,18 @@ func LoadFile(path string) ([]byte, error) {
 		return body, err
 	}
 	return body, nil
+}
+
+func ParseChannel(channel string) (string, string, error) {
+	var err error
+	cleaned := strings.Trim(channel, "<>")
+	id, name, found := strings.Cut(cleaned, "|")
+	if !found {
+		err = errors.New("Channel not found")
+	}
+	return id, name, err
+}
+
+func ParseURL(url string) string {
+	return strings.Trim(url, "<>")
 }
