@@ -1,13 +1,15 @@
 # Song of the day bot
 
-SOTD Slack bot that provides daily (or more) links to a daily song of the day.
-The bot provides a separate playlist for channel that it is.   Channel
-participants are then widely encouraged to contribute songs to the channel
-playlist.
+This project is a Song of the Day Slack Bot that provides daily link from a 
+list of songs to one or more channels.   The bot provides a separate 
+playlist for each channel.   Channels that run out of their private list of
+songs will backfill from songs that have been previously played in other
+channels.
 
 The playlist for each channel is randomized, allowing users to add many of
 their favorite songs at one time without hogging the front of the playlist
-queue.
+queue. Prolific users are able to swamp out other users,  so it's 
+recommended that you widely encourage many people to participate!
 
 ## Usage
 
@@ -15,37 +17,35 @@ Interation with the bot primarily happens via private message. You can send
 the following commands to the bot to control song of the day for your channel
 
 
-### General commands
+### Bot commands
 -------------------
 
-- `hi` or `hello` 
-Check if the bot ia answering
-- `channels` 
-List the channels that the Bot is in
+This bot only listens for private messaages.  
 
-### Song Management commands
 
-- `add #channel URL An optional user explanation for why they contributed this song`
-add ads a new song to the playlist for the given channel. The song will also be used as
-backfill for channels that have empty playlists
-- `add! #channel URL Song description` - Add a song to the playlist even if the
-  song has previously been added to sotd
-- `song rm URL` [TODO] Completely remove a song from SOTDbot.  Intended for those NSFW moments
+*add CHANNEL URL [Song description]* Add a song to a play with optional
+description
 
-### Playlist Commands
+*delete URL* Delete song matching URL
 
-- `playlist list` List out all of the channel playlists
-- `playlist show CHANNEL_NAME` Show the playlist 
-- `playlist delete CHANNEL_NAME` [TODO] tell the bot to delete a channel playlist and leave the channel. 
-- `playlist cron CHANNEL_NAME  new crontab [TODO] Set a new schedule for the specified playlist. See Cron below for more information
+*playlists* List all running playlists
 
+*load CHANNEL URL* Import a json playlist from an URL.  Imports will be
+credited to the importer
+
+*stop CHANNEL* Tell SOTD to remove a playlist for a channel. The songs will be
+saved for backfill, but the playlist will be gone, gone, gone
+
+*show CHANNEL* Show the playlist for a given channel
+
+*hello* Say hello
 
 
 ## Crontab
 
 Each channel can be scheduled independently of one another. The pattern is a
 stanadrd cron format (https://en.wikipedia.org/wiki/Cron) with numeric fields
-for Minute, Hour, Day of Month, Month and Day of week
+for Minute, Hour, Day of Month, Month and Day of week (numeric, sunday being 0)
 
 
 ` 00 22 * * 1-5 ` - Play a song at 22:00 UTC (3PM PDT) Mon-Fri  to celebrate the deployment window
@@ -54,6 +54,25 @@ for Minute, Hour, Day of Month, Month and Day of week
 The main intent is for each channel to set the best time for SOTD for their own
 channel playlist, but the functiality is there if you want to set your cron up
 for certain months or days of the month too.  
+
+## Bulk Importing Songs
+
+Songs can be imported over HTTP via a json formatted list. The list should have
+the following structure:
+
+```
+[
+  {
+    "URL": "https://www.youtube.com/watch?v=hQKfAdhXBpA"
+    "Description": "Kids playing drums in new orleans"
+  },
+  {
+    "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "Description": "Would I be me without this one?"
+  },
+]
+```
+
 
 
 ## Installation
@@ -116,13 +135,11 @@ graph TD;
    jukebox-- controller: Playset channel -->controller
 ```
 
-
 ## Dedication
 
 This project is dedicated to my close friends Belmin, Brandon, Brian, Drew,
 Jaysen, Jeff, Jeremy and Jhurani.  To quote Martin Gore,  you made "All the
 things I detest, I will almost like"  Thanks for making the last half decade of
 my life such an adventure.  Call me when you need me. =)
-
 
 
