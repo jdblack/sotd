@@ -50,25 +50,28 @@ func (c *Controller) start() {
 
 }
 
+func (c *Controller) SpinAPlay(play Play) {
+	desc := "from"
+	s := play.song
+	msg := "\n\n\nTime for *Sotd*!"
+	if play.backfill {
+		msg += " Your channel is out of songs, so we stole one for ya "
+	}
+	if len(s.Description) > 1 {
+		desc = s.Description
+	}
+	msg += fmt.Sprintf("\n\n    _*%s -- %s *_\n\n", desc, s.RealName)
+
+	c.Tell(play.channel, msg)
+}
+
 func (c *Controller) mainloop() {
 	for {
 		select {
 		case in := <-c.bot.frombot:
 			c.Commands(in)
 		case play := <-c.jukebox.Playset:
-			s := play.song
-			fmt.Printf("Spin: %+v\n", s)
-			msg := ""
-			msg += fmt.Sprintf("\n\n\nTime for *SotD*!  Check out %s !\n", s.URL)
-			if len(s.Description) > 1 {
-				msg += fmt.Sprintf("\n_*%s -- %s *_\n", s.Description, s.RealName)
-			} else {
-				msg += fmt.Sprintf("\n-- _*from %s *_\n", s.RealName)
-			}
-			if play.backfill {
-				msg += "\n(*your channel is out of songs, so we stole one!)\n"
-			}
-			c.Tell(play.channel, msg)
+			c.SpinAPlay(play)
 		case <-time.After(time.Duration(c.idleTimeout) * time.Second):
 			fmt.Printf("All quiet here for the last %d seconds\n", c.idleTimeout)
 		}

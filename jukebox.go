@@ -87,7 +87,6 @@ func (j *Jukebox) loadSongs(in FromBot, args string) ([]Song, error) {
 	for _, song := range songs {
 		song.User = in.user
 		song.RealName = in.fullName
-		fmt.Printf("Adding song %+v\n", song)
 		err = j.AddSong(song, channel)
 		if err != nil {
 			return loaded, err
@@ -192,13 +191,14 @@ func (j *Jukebox) schedulePlaylists() {
 	var playlists []Playlist
 	j.cron.Clear()
 	j.db.Find(&playlists)
-	fmt.Printf("---  %+v ---\n", playlists)
 
 	for _, pl := range playlists {
-		fmt.Printf("Set up cron schedule for %s with %s\n (%+v)\n", pl.Channel, pl.Cron, pl)
 		channel := pl.Channel
 		j.cron.Cron(pl.Cron).Tag(pl.Channel).Do(func() {
-			j.spinPlaylist(channel)
+			err := j.spinPlaylist(channel)
+			if err != nil {
+				fmt.Printf("Got spin error :" + err.Error())
+			}
 		})
 	}
 }
@@ -206,6 +206,7 @@ func (j *Jukebox) schedulePlaylists() {
 func (j *Jukebox) randomSong() (Song, error) {
 	var songs []Song
 	j.db.Find(&songs)
+	fmt.Println("Spin a random song")
 	if len(songs) == 0 {
 		return Song{}, errors.New("Unable to find new song to play")
 	}
@@ -216,18 +217,24 @@ func (j *Jukebox) spinPlaylist(name string) error {
 	var err error
 	channel, err := j.ensurePlaylist(name)
 	play := Play{channel: name, backfill: false}
+	fmt.Println("Spin a song for " + name)
 
 	if err != nil {
 		return err
 	}
 
 	if len(channel.Songs) == 0 {
-		play.song, err = j.randomSong()
 		play.backfill = true
+		play.song, err = j.randomSong()
 	} else {
 		play.song = channel.Songs[rand.Intn(len(channel.Songs))]
 		err = j.db.Model(&channel).Association("Songs").Delete(&play.song)
 	}
+	if err == nil {
+		fmt.Printf("Adding play for %+v\n", play)
+		j.Playset <- play
+	}
+
 	return err
 }
 
@@ -252,9 +259,7 @@ func (j *Jukebox) AddSong(song Song, channel string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("I need to add song %+v\n", song)
 	res := j.db.FirstOrCreate(&song, &song)
-	fmt.Printf("Result of adding song %+v\n", res)
 	if res.Error != nil {
 		return res.Error
 	}
