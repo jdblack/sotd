@@ -151,7 +151,8 @@ graph TD;
 
 This project is dedicated to my close friends Belmin, Brandon, Brian, Drew,
 Jaysen, Jeff, Jeremy and Jhurani.  You guys mean the world to me and I 
-look forward to working with you again some day =)
-have made the last half decade
+literally can not wait for the day for our paths to cross again.  Come 
+see me =)
+
 
 
