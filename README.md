@@ -130,10 +130,10 @@ Design
 ```mermaid
 graph TD;
    slack{slack api}<-- event handler -->bot
-   bot-- FromBot ch --> controller
-   controller-- ToBot ch -->bot
-   controller-- fn_calls -->jukebox
-   controller-- fn_calls -->bot
+   bot-- FromBot<br />channel --> controller
+   controller-- ToBot<br />channel -->bot
+   controller-- funcs  -->jukebox
+   controller-- funcs  -->bot
    jukebox --> cron{Cron Scheduler}
    cron{Cron Scheduler}-- Playset ch -->controller
 ```
