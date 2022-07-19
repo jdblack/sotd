@@ -20,25 +20,28 @@ the following commands to the bot to control song of the day for your channel
 ### Bot commands
 -------------------
 
-This bot only listens for private messaages.  
+This bot only listens for private messaages for security purposes and does 
+not need to be invited into any channels in order to function.
 
 
-*add CHANNEL URL [Song description]* Add a song to a play with optional
+
+
+**add CHANNEL URL [OPTIONAL DESCRIPTION]**  Add a song to a play with optional
 description
 
-*delete URL* Delete song matching URL
+**delete URL** Delete song matching URL
 
-*playlists* List all running playlists
+**playlists** List all running playlists
 
-*load CHANNEL URL* Import a json playlist from an URL.  Imports will be
+**load CHANNEL URL** Import a json playlist from an URL.  Imports will be
 credited to the importer
 
-*stop CHANNEL* Tell SOTD to remove a playlist for a channel. The songs will be
+**stop CHANNEL** Tell SOTD to remove a playlist for a channel. The songs will be
 saved for backfill, but the playlist will be gone, gone, gone
 
-*show CHANNEL* Show the playlist for a given channel
+**show CHANNEL** Show the playlist for a given channel
 
-*hello* Say hello
+**hello** Say hello
 
 
 ## Crontab
@@ -135,14 +138,15 @@ graph TD;
    controller-- funcs  -->jukebox
    controller-- funcs  -->bot
    jukebox --> cron{Cron Scheduler}
-   cron{Cron Scheduler}-- Playset ch -->controller
+   cron{Cron Scheduler}-- Playset<br />channel -->controller
 ```
+
 
 ## Dedication
 
 This project is dedicated to my close friends Belmin, Brandon, Brian, Drew,
-Jaysen, Jeff, Jeremy and Jhurani.  To quote Martin Gore,  you made "All the
-things I detest, I will almost like"  Thanks for making the last half decade of
-my life such an adventure.  Call me when you need me. =)
+Jaysen, Jeff, Jeremy and Jhurani.  You guys mean the world to me and I 
+look forward to working with you again some day =)
+have made the last half decade
 
 
