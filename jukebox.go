@@ -26,8 +26,9 @@ type Jukebox struct {
 
 // Play is a instruction to play a song in a channel
 type Play struct {
-	channel string `gorm:"foreignkey:ID"`
-	song    Song   `gorm:"foreignkey:ID"`
+	channel  string
+	backfill bool
+	song     Song
 }
 
 // Playlist is self explanativ
@@ -50,7 +51,7 @@ type Playhistory struct {
 // Song is self descripitive
 type Song struct {
 	gorm.Model
-	URL           string
+	URL           string `gorm:"unique"`
 	Description   string
 	User          string
 	RealName      string
@@ -61,6 +62,7 @@ type Song struct {
 
 func (j *Jukebox) loadSongs(in FromBot, args string) ([]Song, error) {
 	var songs []Song
+	var loaded []Song
 	var body []byte
 	var err error
 	first, second, found := strings.Cut(args, " ")
@@ -69,7 +71,7 @@ func (j *Jukebox) loadSongs(in FromBot, args string) ([]Song, error) {
 	}
 	_, channel, err := ParseChannel(first)
 	if err != nil {
-		return songs, err
+		return loaded, err
 	}
 	path := ParseURL(second)
 
@@ -88,10 +90,11 @@ func (j *Jukebox) loadSongs(in FromBot, args string) ([]Song, error) {
 		fmt.Printf("Adding song %+v\n", song)
 		err = j.AddSong(song, channel)
 		if err != nil {
-			return songs, err
+			return loaded, err
 		}
+		loaded = append(loaded, song)
 	}
-	return songs, nil
+	return loaded, nil
 }
 
 //Init Set up the jukebox
@@ -167,7 +170,14 @@ func (j *Jukebox) GetPlaylist(channel string) (Playlist, error) {
 
 func (j *Jukebox) ensurePlaylist(channel string) (Playlist, error) {
 	playlist := Playlist{Channel: channel}
-	res := j.db.Preload("Songs").Where(playlist).FirstOrCreate(&playlist)
+	res := j.db.First(&playlist)
+	found := res.RowsAffected > 0
+
+	res = j.db.Preload("Songs").Where(playlist).FirstOrCreate(&playlist)
+	if !found {
+		fmt.Println("reloading schedules")
+		j.schedulePlaylists()
+	}
 	return playlist, res.Error
 }
 
@@ -180,9 +190,12 @@ func (j *Jukebox) GetPlaylists() []Playlist {
 
 func (j *Jukebox) schedulePlaylists() {
 	var playlists []Playlist
+	j.cron.Clear()
 	j.db.Find(&playlists)
+	fmt.Printf("---  %+v ---\n", playlists)
+
 	for _, pl := range playlists {
-		fmt.Printf("Set up cron schedule for %s with %s\n", pl.Channel, pl.Cron)
+		fmt.Printf("Set up cron schedule for %s with %s\n (%+v)\n", pl.Channel, pl.Cron, pl)
 		channel := pl.Channel
 		j.cron.Cron(pl.Cron).Tag(pl.Channel).Do(func() {
 			j.spinPlaylist(channel)
@@ -190,53 +203,39 @@ func (j *Jukebox) schedulePlaylists() {
 	}
 }
 
+func (j *Jukebox) randomSong() (Song, error) {
+	var songs []Song
+	j.db.Find(&songs)
+	if len(songs) == 0 {
+		return Song{}, errors.New("Unable to find new song to play")
+	}
+	return songs[rand.Intn(len(songs))], nil
+}
+
 func (j *Jukebox) spinPlaylist(name string) error {
-	fmt.Printf("Spin a song from  %+s\n", name)
+	var err error
 	channel, err := j.ensurePlaylist(name)
+	play := Play{channel: name, backfill: false}
+
 	if err != nil {
 		return err
 	}
 
-	if len(channel.Songs) > 0 {
-		song := channel.Songs[rand.Intn(len(channel.Songs))]
-		fmt.Printf("I chose %d:%s from %d\n", song.ID, song.URL, len(channel.Songs))
-		j.Playset <- Play{channel: name, song: song}
-
-		var play = Playhistory{
-			SongID:     song.ID,
-			PlaylistID: channel.ID,
-		}
-		res := j.db.Create(&play)
-		if res.Error != nil {
-			return res.Error
-		}
-
-		fmt.Printf("Deassociate song from channel %s : %+v\n", name, song)
-		err = j.db.Model(&channel).Association("Songs").Delete(&song)
-		if err != nil {
-			fmt.Printf("I had an error with song (%s) %s : %+v\n", err, name, song)
-		}
-
-		return nil
+	if len(channel.Songs) == 0 {
+		play.song, err = j.randomSong()
+		play.backfill = true
+	} else {
+		play.song = channel.Songs[rand.Intn(len(channel.Songs))]
+		err = j.db.Model(&channel).Association("Songs").Delete(&play.song)
 	}
-
-	var songs []Song
-	j.db.Find(&songs)
-	if len(songs) == 0 {
-		return errors.New("Unable to find new song to play")
-	}
-
-	song := songs[rand.Intn(len(songs))]
-	j.Playset <- Play{channel: name, song: song}
-	fmt.Printf("%+v\n", song)
-
-	return nil
+	return err
 }
 
 //DeleteChannel removes a channel
 func (j *Jukebox) DeleteChannel(in FromBot, channel string) (int64, error) {
 	var pl Playlist
 	res := j.db.Where("Channel LIKE ?", channel).Delete(&pl)
+	j.schedulePlaylists()
 	return res.RowsAffected, res.Error
 }
 
@@ -253,7 +252,9 @@ func (j *Jukebox) AddSong(song Song, channel string) error {
 	if err != nil {
 		return err
 	}
-	res := j.db.Create(&song)
+	fmt.Printf("I need to add song %+v\n", song)
+	res := j.db.FirstOrCreate(&song, &song)
+	fmt.Printf("Result of adding song %+v\n", res)
 	if res.Error != nil {
 		return res.Error
 	}

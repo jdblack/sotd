@@ -17,18 +17,21 @@ type Controller struct {
 
 type menuItem struct {
 	h string                // The help to give
+	o string                // help options
 	f func(FromBot, string) // Callout function
 }
 
 func (c *Controller) start() {
 	c.idleTimeout = 60
 	c.mainMenu = map[string]menuItem{
-		"hello":    {f: c.hello, h: "Say hello"},
-		"hi":       {f: c.hello, h: "Alias for hello"},
-		"add":      {f: c.addSong, h: "Add a song to a play"},
-		"delete":   {f: c.deleteSong, h: "Delete all songs with provided URL"},
-		"playlist": {f: c.playlist, h: "Run a playlist subcommand"},
-		"channels": {f: c.listChannels, h: "List Channels"},
+		"hello":     {f: c.hello, o: "", h: "Say hello"},
+		"add":       {f: c.addSong, o: "CHANNEL* URL [Song description]", h: "Add a song to a play with optional description"},
+		"delete":    {f: c.deleteSong, o: "URL", h: "Delete song matching URL"},
+		"playlists": {f: c.listPlaylists, o: "", h: "List all running playlists"},
+		"load":      {f: c.loadPlaylist, o: "CHANNEL URL", h: "Import a json playlist from an URL"},
+		"stop":      {f: c.leaveChannel, o: "CHANNEL", h: "Tell SOTD to remove a playlist for a channel"},
+		"show":      {f: c.showPlaylist, o: "CHANNEL", h: "Show the playlist for a given channel"},
+		//		"channels":  {f: c.listChannels, h: "List Channels"},
 	}
 	var err error
 	fmt.Println("Controller  starting")
@@ -54,8 +57,17 @@ func (c *Controller) mainloop() {
 			c.Commands(in)
 		case play := <-c.jukebox.Playset:
 			s := play.song
-			msg := fmt.Sprintf("Please thank <@%s> for today's SOTD %s\n", s.User, s.URL)
-			msg += s.Description
+			fmt.Printf("Spin: %+v\n", s)
+			msg := ""
+			msg += fmt.Sprintf("\n\n\nTime for *SotD*!  Check out %s !\n", s.URL)
+			if len(s.Description) > 1 {
+				msg += fmt.Sprintf("\n_*%s -- %s *_\n", s.Description, s.RealName)
+			} else {
+				msg += fmt.Sprintf("\n-- _*from %s *_\n", s.RealName)
+			}
+			if play.backfill {
+				msg += "\n(*your channel is out of songs, so we stole one!)\n"
+			}
 			c.Tell(play.channel, msg)
 		case <-time.After(time.Duration(c.idleTimeout) * time.Second):
 			fmt.Printf("All quiet here for the last %d seconds\n", c.idleTimeout)
@@ -89,28 +101,39 @@ func (c *Controller) showPlaylist(in FromBot, args string) {
 	c.Tell(in.user, strings.Join(m, "\n"))
 }
 
-func (c *Controller) playlist(in FromBot, message string) {
-	cmd, args, _ := strings.Cut(message, " ")
-	switch cmd {
-	case "list":
-		playlists := c.jukebox.GetPlaylists()
-		for _, pl := range playlists {
-			c.Tell(in.user, fmt.Sprintf("%s : %s", pl.Channel, pl.Cron))
-		}
-	case "load":
-		songs, err := c.jukebox.loadSongs(in, args)
-		if err != nil {
-			c.Tell(in.user, "I was unable to load the songs:"+err.Error())
-			return
-		}
-		c.Tell(in.user, fmt.Sprintf("I loaded %d songs", len(songs)))
-
-	case "leave":
-		c.jukebox.DeleteChannel(in, args)
-	case "show":
-		c.showPlaylist(in, args)
+func (c *Controller) loadPlaylist(in FromBot, args string) {
+	songs, err := c.jukebox.loadSongs(in, args)
+	if err != nil {
+		c.Tell(in.user, fmt.Sprintf("There was a problem, but I was able to add %d songs. The error was %s", len(songs), err.Error()))
 		return
 	}
+	c.Tell(in.user, fmt.Sprintf("I loaded %d songs", len(songs)))
+}
+
+func (c *Controller) listPlaylists(in FromBot, args string) {
+	playlists := c.jukebox.GetPlaylists()
+	for _, pl := range playlists {
+		c.Tell(in.user, fmt.Sprintf("%s : %s", pl.Channel, pl.Cron))
+	}
+}
+
+func (c *Controller) leaveChannel(in FromBot, args string) {
+	id, name, err := ParseChannel(args)
+	id = strings.Trim(id, "#")
+	if err != nil {
+		c.Tell(in.user, "I was not able to leave "+name)
+		return
+	}
+	c.jukebox.DeleteChannel(in, name)
+
+	_, err = c.bot.leaveChannel(id)
+
+	if err != nil {
+		c.Tell(in.user, err.Error())
+		return
+	}
+	c.Tell(in.user, "I have left "+name)
+	return
 }
 
 func (c *Controller) hello(in FromBot, args string) {
@@ -147,11 +170,12 @@ func (c *Controller) addSong(in FromBot, args string) {
 	}
 
 	channels, _ := c.bot.ChannelNames()
-	if !c.contains(channels, channel) {
-		msg := fmt.Sprintf("You need to invite me to %s first!", s[0])
-		c.Tell(in.user, msg)
-		return
-	}
+	fmt.Printf("I want %s and we have %+v\n", channel, channels)
+	//	if !c.contains(channels, channel) {
+	//		msg := fmt.Sprintf("You need to invite me to %s first!", s[0])
+	//		c.Tell(in.user, msg)
+	//		return
+	//	}
 
 	if len(s) < 2 {
 		c.Tell(in.user, "To add a song, message me again with the following: ")
@@ -161,12 +185,16 @@ func (c *Controller) addSong(in FromBot, args string) {
 		c.Tell(in.user, msg)
 		return
 	}
+	desc := ""
+	if len(s) > 2 {
+		desc = s[2]
+	}
 
 	song := Song{
 		User:        in.user,
 		RealName:    in.fullName,
 		URL:         s[1],
-		Description: s[2],
+		Description: desc,
 	}
 
 	err = c.jukebox.AddSong(song, channel)
@@ -222,7 +250,7 @@ func (c *Controller) printHelp(in FromBot, menu map[string]menuItem) {
 	msg := []string{"Help for  in.message"}
 
 	for name, data := range menu {
-		msg = append(msg, fmt.Sprintf("%s : %s", name, data.h))
+		msg = append(msg, fmt.Sprintf("*%s %s*\n\t\t%s\n", name, data.o, data.h))
 	}
 	c.Tell(in.user, strings.Join(msg, "\n"))
 }

@@ -39,7 +39,7 @@ func (s *SlackBot) ChannelNames() ([]string, error) {
 	channels, _, err := s.api.GetConversationsForUser(&up)
 	chans := []string{}
 	for _, channel := range channels {
-		chans = append(chans, "#"+channel.Name)
+		chans = append(chans, channel.Name)
 	}
 
 	return chans, err
@@ -108,6 +108,10 @@ func NewBot() (*SlackBot, error) {
 		fmt.Println(err)
 	}
 	return &bot, err
+}
+
+func (s *SlackBot) leaveChannel(channel string) (bool, error) {
+	return s.client.LeaveConversation(channel)
 }
 
 func (s *SlackBot) sendMessage() {
