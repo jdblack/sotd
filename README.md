@@ -132,8 +132,8 @@ graph TD;
    slack{slack api}<-- event handler -->bot
    bot-- FromBot ch --> controller
    controller-- ToBot ch -->bot
-   controller-->Jukebox
-   controller-->bot
+   controller-- fn_aclls -->jukebox
+   controller-- fn_calls -->bot
    jukebox --> cron{Cron Scheduler}
    cron{Cron Scheduler}-- Playset ch -->controller
 ```
