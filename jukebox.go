@@ -46,6 +46,7 @@ type Playlog struct {
 	gorm.Model
 	SongID     uint
 	PlaylistID uint
+	backfill   bool
 }
 
 // Song is self descripitive
@@ -166,6 +167,20 @@ func (j *Jukebox) GetPlaylist(channel string) (Playlist, error) {
 	return playlist, res.Error
 }
 
+//ChannelHistory is supposed to list the songs that have previously
+// played in the channel  FIXME It does not
+func (j *Jukebox) ChannelHistory(channel string) error {
+	playlist := Playlist{Channel: channel}
+
+	res := j.db.Preload("Playlogs").Find(&playlist)
+	fmt.Printf("============\n")
+	for _, pl := range playlist.Playlogs {
+		fmt.Printf("%+v\n", pl)
+	}
+	fmt.Printf("============\n")
+	return res.Error
+}
+
 func (j *Jukebox) ensurePlaylist(channel string) (Playlist, error) {
 	playlist := Playlist{Channel: channel}
 	res := j.db.First(&playlist)
@@ -243,7 +258,7 @@ func (j *Jukebox) spinPlaylist(name string) error {
 
 	fmt.Printf("Storing record\n")
 
-	log := Playlog{SongID: play.song.ID, PlaylistID: pl.ID}
+	log := Playlog{SongID: play.song.ID, PlaylistID: pl.ID, backfill: play.backfill}
 	res := j.db.Create(&log)
 	return res.Error
 }
