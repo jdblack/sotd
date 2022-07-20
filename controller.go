@@ -95,12 +95,14 @@ func (c *Controller) showPlaylist(in FromBot, args string) {
 		return
 	}
 	m := []string{
-		fmt.Sprintf("Request: %s", ch),
-		fmt.Sprintf("Name: %s", pl.Channel),
-		fmt.Sprintf("Play Schedule: %s", pl.Cron),
+		"> ",
+		fmt.Sprintf("*Playlist Channel Name*: %s", pl.Channel),
+		fmt.Sprintf("*Play Schedule* : %s", pl.Cron),
+		fmt.Sprintf("**%d Songs to come!** ", len(pl.Songs)),
+		"> ",
 	}
 	for _, s := range pl.Songs {
-		m = append(m, fmt.Sprintf("%s : `%s` %s", s.User, s.URL, s.Description))
+		m = append(m, fmt.Sprintf("<@%s> _(%s)_ : `%s` %s", s.User, s.RealName, s.URL, s.Description))
 	}
 	c.Tell(in.user, strings.Join(m, "\n"))
 }

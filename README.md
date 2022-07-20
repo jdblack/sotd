@@ -139,8 +139,8 @@ Design
 graph TD;
    slack{slack api}<-- event handler -->bot
    bot-- FromBot<br />channel --> controller
-   controller-- ToBot<br />channel -->bot
    controller-- funcs  -->jukebox
+   controller-- ToBot<br />channel -->bot
    controller-- funcs  -->bot
    jukebox --> cron{Cron Scheduler}
    cron{Cron Scheduler}-- Playset<br />channel -->controller

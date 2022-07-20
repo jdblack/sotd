@@ -36,13 +36,13 @@ type Playlist struct {
 	gorm.Model
 	Channel string
 	//Cron string `gorm:"default:0 18 * * 1-5"`
-	Cron          string `gorm:"default:* * * * *"`
-	Songs         []Song `gorm:"many2many:song_playlist;"`
-	Playhistories []Playhistory
+	Cron     string `gorm:"default:* * * * *"`
+	Songs    []Song `gorm:"many2many:song_playlist;"`
+	Playlogs []Playlog
 }
 
 // Playhistory remembers when songs were played
-type Playhistory struct {
+type Playlog struct {
 	gorm.Model
 	SongID     uint
 	PlaylistID uint
@@ -51,13 +51,12 @@ type Playhistory struct {
 // Song is self descripitive
 type Song struct {
 	gorm.Model
-	URL           string `gorm:"unique"`
-	Description   string
-	User          string
-	RealName      string
-	Playhistories []Playhistory
-
-	Playlists []Playlist `gorm:"many2many:song_playlist;"`
+	URL         string `gorm:"unique"`
+	Description string
+	User        string
+	RealName    string
+	Playlists   []Playlist `gorm:"many2many:song_playlist;"`
+	Playlogs    []Playlog
 }
 
 func (j *Jukebox) loadSongs(in FromBot, args string) ([]Song, error) {
@@ -127,7 +126,7 @@ func (j *Jukebox) openSQLite() error {
 
 	path := j.config.Section("database").Key("path").String()
 	j.db, err = gorm.Open(sqlite.Open(path), &gorm.Config{})
-	j.db.AutoMigrate(&Song{}, &Playlist{}, &Playhistory{})
+	j.db.AutoMigrate(&Song{}, &Playlist{}, &Playlog{})
 	if err == nil {
 		j.ready = true
 	}
@@ -230,12 +229,23 @@ func (j *Jukebox) spinPlaylist(name string) error {
 		play.song = channel.Songs[rand.Intn(len(channel.Songs))]
 		err = j.db.Model(&channel).Association("Songs").Delete(&play.song)
 	}
-	if err == nil {
-		fmt.Printf("Adding play for %+v\n", play)
-		j.Playset <- play
+	if err != nil {
+		return err
 	}
 
-	return err
+	pl, err := j.GetPlaylist(name)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Adding play for %+v\n", play)
+	j.Playset <- play
+
+	fmt.Printf("Storing record\n")
+
+	log := Playlog{SongID: play.song.ID, PlaylistID: pl.ID}
+	res := j.db.Create(&log)
+	return res.Error
 }
 
 //DeleteChannel removes a channel
