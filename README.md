@@ -85,18 +85,18 @@ work environment.
 
 ## Installation
 
-Create ~/.sotd.ini with the following contents:
+Sotd is able source its configuration from either Ini files or environment variables, depending upon
+whether the deployment is intended for traditional installs or docker. Any configuration value specified
+in the ini config may be set via the environment by setting a key of `SOTD_$section_$key="value"`.  For
+example, one can turn on event streaming by  running export `SOTD_slack_debug=true` 
 
 ```
-[database]
-type = "sqlite"
-path = "file::memory:?cache=shared"
 
 [slack]
+# debug = true  # if you wish to see the bot event stream
 botToken=xoxb-#############-#############-########################
 appToken=xapp-#-###########-#############-################################################################
 ```
-
 
 ## Databases
 
@@ -109,6 +109,14 @@ Sqlite
 The sqlite connector requires  single argument under the database section, the
 path of the database. A temporary database can be created in memory by setting
 a path of "file::memory:?cache=shared"
+
+```
+# Run an ephemeral version of sotd, perhaps for debugging. Playlists will be
+# lost when the process dies!
+[database]
+type = "sqlite"
+path = "file::memory:?cache=shared"
+```
 
 ```
 [database]
@@ -130,6 +138,9 @@ host = "mysql-server"
 pass = "password"
 db   = "database name"
 ```
+
+
+
 
 
 Design
