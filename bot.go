@@ -64,12 +64,11 @@ func (s *SlackBot) message(event *slackevents.MessageEvent, message string) erro
 
 func (s *SlackBot) connect() error {
 	fmt.Println("Connecting")
-	cfg := Config.Section("slack")
-	debug := cfg.HasKey("debug")
+	debug := Cfg.GetBool("slack_debug")
 	s.api = slack.New(
-		cfg.Key("botToken").String(),
+		Cfg.GetStr("slack_botToken"),
 		slack.OptionDebug(debug),
-		slack.OptionAppLevelToken(cfg.Key("appToken").String()),
+		slack.OptionAppLevelToken(Cfg.GetStr("appToken")),
 		slack.OptionLog(log.New(os.Stdout, "api: ", log.Lshortfile|log.LstdFlags)),
 	)
 

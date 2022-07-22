@@ -2,17 +2,14 @@ package main
 
 import (
 	"fmt"
-
-	"gopkg.in/ini.v1"
 	//  "log"
 )
 
-// Config is the main ini config
-var Config *ini.File
+var Cfg Config
 
 func main() {
 	var err error
-	Config, err = loadConfig("~/.sotd.ini")
+	err = Cfg.load("~/.sotd.ini")
 	if err != nil {
 		panic(err)
 	}

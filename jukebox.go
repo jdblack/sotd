@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron"
-	"gopkg.in/ini.v1"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -20,7 +19,7 @@ type Jukebox struct {
 	ready   bool
 	db      *gorm.DB
 	cron    *gocron.Scheduler
-	config  *ini.File
+	config  *Config
 	Playset chan Play
 }
 
@@ -36,7 +35,7 @@ type Playlist struct {
 	gorm.Model
 	Channel string
 	//Cron string `gorm:"default:0 18 * * 1-5"`
-	Cron     string `gorm:"default:* * * * *"`
+	Cron     string `gorm:"default:*/5 * * * *"`
 	Songs    []Song `gorm:"many2many:song_playlist;"`
 	Playlogs []Playlog
 }
@@ -97,11 +96,11 @@ func (j *Jukebox) loadSongs(in FromBot, args string) ([]Song, error) {
 }
 
 //Init Set up the jukebox
-func (j *Jukebox) Init(cfg *ini.File) error {
+func (j *Jukebox) Init(cfg *Config) error {
 	var err error
 	j.config = cfg
 
-	dtype := j.config.Section("database").Key("type").String()
+	dtype := j.config.GetStr("database_type")
 
 	j.Playset = make(chan Play, 100)
 
@@ -125,7 +124,7 @@ func (j *Jukebox) Init(cfg *ini.File) error {
 func (j *Jukebox) openSQLite() error {
 	var err error
 
-	path := j.config.Section("database").Key("path").String()
+	path := j.config.GetStr("database_path")
 	j.db, err = gorm.Open(sqlite.Open(path), &gorm.Config{})
 	j.db.AutoMigrate(&Song{}, &Playlist{}, &Playlog{})
 	if err == nil {
@@ -137,11 +136,11 @@ func (j *Jukebox) openSQLite() error {
 func (j *Jukebox) openMySQL() error {
 	var err error
 
-	host := j.config.Section("database").Key("host").String()
-	port := j.config.Section("database").Key("port").String()
-	user := j.config.Section("database").Key("user").String()
-	pass := j.config.Section("database").Key("pass").String()
-	db := j.config.Section("database").Key("db").String()
+	host := j.config.GetStr("database_host")
+	port := j.config.GetStr("database_port")
+	user := j.config.GetStr("database_user")
+	pass := j.config.GetStr("database_pass")
+	db := j.config.GetStr("database_db")
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, pass, host, port, db)
 	dsn += "?charset=utf8mb4&parseTime=True&loc=Local"
 
@@ -154,7 +153,7 @@ func (j *Jukebox) openMySQL() error {
 }
 
 // NewJukebox creates a new jukebox
-func NewJukebox(cfg *ini.File) (*Jukebox, error) {
+func NewJukebox(cfg *Config) (*Jukebox, error) {
 	j := Jukebox{}
 	err := j.Init(cfg)
 	return &j, err
