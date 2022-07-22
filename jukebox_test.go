@@ -1,7 +1,7 @@
 package main
 
-/*
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,23 +10,30 @@ import (
 
 var testurl = "https://for-your-perusal.s3.amazonaws.com/sotd/songs_test1.json"
 
-func testNewJB() *Jukebox {
-	cfg, _ := loadConfig("testing/test1.ini")
-	jb, _ := NewJukebox(cfg)
+func testNewJB(t *testing.T) *Jukebox {
+	err := Cfg.load("testing/test1.ini")
+	require.NoError(t, err)
+	jb, err := NewJukebox(&Cfg)
+	require.NoError(t, err)
 	return jb
 }
 
 func TestInit(t *testing.T) {
-	cfg, err := loadConfig("testing/test1.ini")
+	err := Cfg.load("testing/test1.ini")
 	assert.Nil(t, err)
-	jukebox, err := NewJukebox(cfg)
+	jukebox, err := NewJukebox(&Cfg)
 	require.NoError(t, err)
 	assert.NotNil(t, jukebox)
 }
 
+func mockFB(user string, channel string, path string) (FromBot, string) {
+	args := fmt.Sprintf("%s %s", channel, path)
+	return FromBot{user: user, message: args}, args
+}
+
 func TestLoadFile(t *testing.T) {
-	jb := testNewJB()
-	songs, err := jb.loadSongs("testuser", "testchan", "testing/songs.json")
+	jb := testNewJB(t)
+	songs, err := jb.loadSongs(mockFB("testuser", "testchan", "testing/songs.json"))
 	assert.NotNil(t, songs)
 	require.NoError(t, err)
 
@@ -42,8 +49,8 @@ func TestLoadFile(t *testing.T) {
 }
 
 func TestLoadURL(t *testing.T) {
-	jb := testNewJB()
-	songs, err := jb.loadSongs("testuser", "testchan", testurl)
+	jb := testNewJB(t)
+	songs, err := jb.loadSongs(mockFB("testuser", "testchan", testurl))
 	assert.NotNil(t, songs)
 	require.NoError(t, err)
 
@@ -53,8 +60,8 @@ func TestLoadURL(t *testing.T) {
 }
 
 func TestDeleteSong(t *testing.T) {
-	jb := testNewJB()
-	_, err := jb.loadSongs("testuser", "testchan", "testing/songs.json")
+	jb := testNewJB(t)
+	_, err := jb.loadSongs(mockFB("testuser", "testchan", "testing/songs.json"))
 	require.NoError(t, err)
 
 	pl, err := jb.GetPlaylist("testchan")
@@ -68,4 +75,3 @@ func TestDeleteSong(t *testing.T) {
 	assert.Equal(t, oldlen-1, len(pl.Songs))
 
 }
-*/
