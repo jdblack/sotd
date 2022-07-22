@@ -68,7 +68,7 @@ func (s *SlackBot) connect() error {
 	s.api = slack.New(
 		Cfg.GetStr("slack_botToken"),
 		slack.OptionDebug(debug),
-		slack.OptionAppLevelToken(Cfg.GetStr("appToken")),
+		slack.OptionAppLevelToken(Cfg.GetStr("slack_appToken")),
 		slack.OptionLog(log.New(os.Stdout, "api: ", log.Lshortfile|log.LstdFlags)),
 	)
 
