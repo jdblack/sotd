@@ -122,10 +122,14 @@ func (c *Controller) listPlaylists(in FromBot, args string) {
 func (c *Controller) leaveChannel(in FromBot, args string) {
 	id, name := ParseChannel(args)
 	id = strings.Trim(id, "#")
-	c.jukebox.DeleteChannel(in, name)
 
-	_, err := c.bot.leaveChannel(id)
+	_, err := c.jukebox.DeleteChannel(in, name)
+	if err != nil {
+		c.Tell(in.user, err.Error())
+		return
+	}
 
+	_, err = c.bot.leaveChannel(id)
 	if err != nil {
 		c.Tell(in.user, err.Error())
 		return

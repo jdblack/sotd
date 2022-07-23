@@ -1,10 +1,11 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"strings"
 	"time"
 
@@ -30,17 +31,19 @@ type Play struct {
 	song     Song
 }
 
-// Playlist is self explanativ
+// Playlist is the channel representation of a playlist
+// FIXME Need a way to change the cron for a playlist
 type Playlist struct {
 	gorm.Model
-	Channel string
+	Channel string `gorm:"unique"`
 	//Cron string `gorm:"default:0 18 * * 1-5"`
 	Cron     string `gorm:"default:*/5 * * * *"`
 	Songs    []Song `gorm:"many2many:song_playlist;"`
 	Playlogs []Playlog
 }
 
-// Playhistory remembers when songs were played
+// Playlog remembers when songs were played
+// FIXME We need a way to recite this history
 type Playlog struct {
 	gorm.Model
 	SongID     uint
@@ -60,6 +63,7 @@ type Song struct {
 }
 
 func (j *Jukebox) loadSongs(in FromBot, args string) ([]Song, error) {
+	// FIXME Need a way to safely override Real Name
 	var songs []Song
 	var loaded []Song
 	var body []byte
@@ -123,7 +127,10 @@ func (j *Jukebox) openSQLite() error {
 
 	path := j.config.GetStr("database_path")
 	j.db, err = gorm.Open(sqlite.Open(path), &gorm.Config{})
-	j.db.AutoMigrate(&Song{}, &Playlist{}, &Playlog{})
+	if err != nil {
+		return err
+	}
+	err = j.db.AutoMigrate(&Song{}, &Playlist{}, &Playlog{})
 	if err == nil {
 		j.ready = true
 	}
@@ -142,7 +149,10 @@ func (j *Jukebox) openMySQL() error {
 	dsn += "?charset=utf8mb4&parseTime=True&loc=Local"
 
 	j.db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	j.db.AutoMigrate(&Song{}, &Playlist{})
+	if err != nil {
+		return err
+	}
+	err = j.db.AutoMigrate(&Song{}, &Playlist{})
 	if err == nil {
 		j.ready = true
 	}
@@ -215,6 +225,15 @@ func (j *Jukebox) schedulePlaylists() {
 	}
 }
 
+func (j *Jukebox) randInt(max int) int64 {
+	nBig, err := rand.Int(rand.Reader, big.NewInt(int64(max)))
+	if err != nil {
+		panic(err)
+	}
+	return nBig.Int64()
+
+}
+
 func (j *Jukebox) randomSong() (Song, error) {
 	var songs []Song
 	j.db.Find(&songs)
@@ -222,7 +241,7 @@ func (j *Jukebox) randomSong() (Song, error) {
 	if len(songs) == 0 {
 		return Song{}, errors.New("Unable to find new song to play")
 	}
-	return songs[rand.Intn(len(songs))], nil
+	return songs[j.randInt(len(songs))], nil
 }
 
 func (j *Jukebox) spinPlaylist(name string) error {
@@ -239,7 +258,7 @@ func (j *Jukebox) spinPlaylist(name string) error {
 		play.backfill = true
 		play.song, err = j.randomSong()
 	} else {
-		play.song = channel.Songs[rand.Intn(len(channel.Songs))]
+		play.song = channel.Songs[j.randInt(len(channel.Songs))]
 		err = j.db.Model(&channel).Association("Songs").Delete(&play.song)
 	}
 	if err != nil {
@@ -262,11 +281,11 @@ func (j *Jukebox) spinPlaylist(name string) error {
 }
 
 //DeleteChannel removes a channel
-func (j *Jukebox) DeleteChannel(in FromBot, channel string) (int64, error) {
+func (j *Jukebox) DeleteChannel(in FromBot, channel string) (bool, error) {
 	var pl Playlist
 	res := j.db.Where("Channel LIKE ?", channel).Delete(&pl)
 	j.schedulePlaylists()
-	return res.RowsAffected, res.Error
+	return (res.RowsAffected == 1), res.Error
 }
 
 // DeleteSongByURL finds and removes all songs that have this url
