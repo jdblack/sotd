@@ -216,12 +216,15 @@ func (j *Jukebox) schedulePlaylists() {
 
 	for _, pl := range playlists {
 		channel := pl.Channel
-		j.cron.Cron(pl.Cron).Tag(pl.Channel).Do(func() {
+		_, err := j.cron.Cron(pl.Cron).Tag(pl.Channel).Do(func() {
 			err := j.spinPlaylist(channel)
 			if err != nil {
 				fmt.Printf("Got spin error :" + err.Error())
 			}
 		})
+		if err != nil {
+			fmt.Printf("Error scheduling playlist %s: %s", pl.Channel, err.Error())
+		}
 	}
 }
 

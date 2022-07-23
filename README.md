@@ -1,6 +1,7 @@
 
 ![GitHub CI](https://github.com/jdblack/sotd/actions/workflows/testing.yml/badge.svg)
 ![GitHub CI](https://github.com/jdblack/sotd/actions/workflows/coverage.yml/badge.svg)
+![GitHub CI](https://github.com/jdblack/sotd/actions/workflows/security.yml/badge.svg)
 
 
 # Song of the day bot

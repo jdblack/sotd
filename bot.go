@@ -117,11 +117,14 @@ func (s *SlackBot) sendMessage() {
 	for {
 		select {
 		case in := <-s.tobot:
-			s.client.PostMessage(
+			_, _, err := s.client.PostMessage(
 				in.user,
 				slack.MsgOptionText(in.message, false),
 				slack.MsgOptionAsUser(true),
 			)
+			if err != nil {
+				fmt.Printf("error sending message: " + err.Error())
+			}
 		}
 	}
 }
