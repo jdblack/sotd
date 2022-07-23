@@ -33,9 +33,9 @@ func mockFB(user string, channel string, path string) (FromBot, string) {
 
 func TestLoadFile(t *testing.T) {
 	jb := testNewJB(t)
-	songs, err := jb.loadSongs(mockFB("testuser", "testchan", "testing/songs.json"))
-	assert.NotNil(t, songs)
+	songs, err := jb.loadSongs(mockFB("testuser", "testchan", "testing/songs_jblack.json"))
 	require.NoError(t, err)
+	assert.NotNil(t, songs)
 
 	pls := jb.GetPlaylists()
 	assert.Equal(t, 1, len(pls))
@@ -61,7 +61,7 @@ func TestLoadURL(t *testing.T) {
 
 func TestDeleteSong(t *testing.T) {
 	jb := testNewJB(t)
-	_, err := jb.loadSongs(mockFB("testuser", "testchan", "testing/songs.json"))
+	_, err := jb.loadSongs(mockFB("testuser", "testchan", "testing/songs_jblack.json"))
 	require.NoError(t, err)
 
 	pl, err := jb.GetPlaylist("testchan")

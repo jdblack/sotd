@@ -60,14 +60,14 @@ func LoadFile(path string) ([]byte, error) {
 	return body, nil
 }
 
-func ParseChannel(channel string) (string, string, error) {
-	var err error
+func ParseChannel(channel string) (string, string) {
 	cleaned := strings.Trim(channel, "<>")
 	id, name, found := strings.Cut(cleaned, "|")
 	if !found {
-		err = errors.New("Channel not found")
+		name = id
+		id = ""
 	}
-	return id, name, err
+	return id, name
 }
 
 func ParseURL(url string) string {

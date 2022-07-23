@@ -68,10 +68,7 @@ func (j *Jukebox) loadSongs(in FromBot, args string) ([]Song, error) {
 	if !found {
 		return songs, errors.New("Please give me channel and path")
 	}
-	_, channel, err := ParseChannel(first)
-	if err != nil {
-		return loaded, err
-	}
+	_, channel := ParseChannel(first)
 	path := ParseURL(second)
 
 	body, err = LoadFile(path)

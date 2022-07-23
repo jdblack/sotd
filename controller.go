@@ -84,11 +84,7 @@ func (c *Controller) sendHelp(in FromBot, args string) {
 }
 
 func (c *Controller) showPlaylist(in FromBot, args string) {
-	_, ch, err := ParseChannel(args)
-	if err != nil {
-		c.Tell(in.user, fmt.Sprintf(err.Error()))
-		return
-	}
+	_, ch := ParseChannel(args)
 	pl, err := c.jukebox.GetPlaylist(ch)
 	if err != nil {
 		c.Tell(in.user, fmt.Sprintf("I could not find %s : %s", ch, err))
@@ -124,15 +120,11 @@ func (c *Controller) listPlaylists(in FromBot, args string) {
 }
 
 func (c *Controller) leaveChannel(in FromBot, args string) {
-	id, name, err := ParseChannel(args)
+	id, name := ParseChannel(args)
 	id = strings.Trim(id, "#")
-	if err != nil {
-		c.Tell(in.user, "I was not able to leave "+name)
-		return
-	}
 	c.jukebox.DeleteChannel(in, name)
 
-	_, err = c.bot.leaveChannel(id)
+	_, err := c.bot.leaveChannel(id)
 
 	if err != nil {
 		c.Tell(in.user, err.Error())
@@ -169,11 +161,7 @@ func (c *Controller) deleteSong(in FromBot, args string) {
 // AddSong blah
 func (c *Controller) addSong(in FromBot, args string) {
 	s := regexp.MustCompile(" +").Split(args, 3)
-	_, channel, err := ParseChannel(s[0])
-	if err != nil {
-		c.Tell(in.user, err.Error())
-		return
-	}
+	_, channel := ParseChannel(s[0])
 
 	channels, _ := c.bot.ChannelNames()
 	fmt.Printf("I want %s and we have %+v\n", channel, channels)
@@ -203,7 +191,7 @@ func (c *Controller) addSong(in FromBot, args string) {
 		Description: desc,
 	}
 
-	err = c.jukebox.AddSong(song, channel)
+	err := c.jukebox.AddSong(song, channel)
 	if err != nil {
 		c.Tell(in.user, "I had trouble adding "+song.URL+" to "+channel)
 		return
