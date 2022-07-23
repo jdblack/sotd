@@ -1,4 +1,4 @@
-name: Build
+name: Test 
 
 on:
   push:
@@ -7,8 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -18,11 +17,10 @@ jobs:
       with:
         go-version: 1.18
 
-    - name: Build
-      run: go build -v ./...
+    - name: Cover
+      run: go test -v ./... -covermode=count -coverprofile=coverage.out
 
-    - name: Test
-      run: go test -v ./... -cover 
-
+    - name: Report
+      run: go tool cover -func=coverage.out -o=coverage.out
 
 
