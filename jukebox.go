@@ -159,7 +159,10 @@ func NewJukebox(cfg *Config) (*Jukebox, error) {
 // GetPlaylist get a playlist
 func (j *Jukebox) GetPlaylist(channel string) (Playlist, error) {
 	playlist := Playlist{Channel: channel}
-	res := j.db.Preload("Songs").Where(playlist).First(&playlist)
+	res := j.db.Preload("Songs").Where(playlist).Find(&playlist)
+	if res.RowsAffected == 0 {
+		return Playlist{}, errors.New("Unable to find playlist")
+	}
 	return playlist, res.Error
 }
 
@@ -179,12 +182,11 @@ func (j *Jukebox) ChannelHistory(channel string) error {
 
 func (j *Jukebox) ensurePlaylist(channel string) (Playlist, error) {
 	playlist := Playlist{Channel: channel}
-	res := j.db.First(&playlist)
+	res := j.db.Find(&playlist)
 	found := res.RowsAffected > 0
 
 	res = j.db.Preload("Songs").Where(playlist).FirstOrCreate(&playlist)
 	if !found {
-		fmt.Println("reloading schedules")
 		j.schedulePlaylists()
 	}
 	return playlist, res.Error
