@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/go-co-op/gocron v1.15.0
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/slack-go/slack v0.10.2
+	github.com/slack-go/slack v0.11.1
 	github.com/stretchr/testify v1.8.0
 	gopkg.in/ini.v1 v1.66.6
 	gorm.io/driver/mysql v1.3.4
@@ -22,7 +22,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.9 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
-	github.com/stretchr/objx v0.4.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
