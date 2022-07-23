@@ -104,6 +104,11 @@ func (c *Controller) showPlaylist(in FromBot, args string) {
 }
 
 func (c *Controller) loadPlaylist(in FromBot, args string) {
+	if !Cfg.GetBool("insecure_loading") {
+		c.Tell(in.user, "Loading is not enabled in the insecure section of the config")
+		return
+	}
+
 	songs, err := c.jukebox.loadSongs(in, args)
 	if err != nil {
 		c.Tell(in.user, fmt.Sprintf("There was a problem, but I was able to add %d songs. The error was %s", len(songs), err.Error()))

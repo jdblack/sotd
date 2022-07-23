@@ -40,17 +40,16 @@ func ParseStrIntoMap(in string) (map[string]string, error) {
 // LoadFile loads a file from either the filesystem or http
 // FIXME There should be an option to limit file access
 // to http
-
 func LoadFile(path string) ([]byte, error) {
 
 	var body []byte
 	var err error
 
 	if !strings.HasPrefix(strings.ToLower(path), "http") {
-		return os.ReadFile(path)
+		return os.ReadFile(path) /* #nosec G304 Protected by option*/
 	}
 
-	resp, err := http.Get(path)
+	resp, err := http.Get(path) /* #nosec G107 Protected by option*/
 	if err != nil {
 		return body, err
 	}

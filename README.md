@@ -40,7 +40,7 @@ description
 
 **playlists** - List all running playlists
 
-**load CHANNEL URL**  - Import a json playlist from an URL.  Imports will be
+**load CHANNEL PATH|URL**  - Import a json playlist from an URL.  Imports will be
 credited to the importer (See Bulk Importing Songs, below)
 
 **stop CHANNEL** - Tell SOTD to remove a playlist for a channel. The songs will be
@@ -117,19 +117,20 @@ path of the database. A temporary database can be created in memory by setting
 a path of "file::memory:?cache=shared"
 
 ```
-# Run an ephemeral version of sotd, perhaps for debugging. Playlists will be
-# lost when the process dies!
+[database]
+type = "sqlite"
+path = "/var/lib/sotdbot.db"
+```
+
+One can also an ephemal version of sotd, perhaps for debugging. Playlists will
+be lost when the process dies!
+
+```
 [database]
 type = "sqlite"
 path = "file::memory:?cache=shared"
 ```
 
-```
-[database]
-type = "sqlite"
-# path = "file::memory:?cache=shared" # temporary in-memory db for testing
-path = "/var/lib/sotdbot.db"
-```
 
 Mysql
 ------
@@ -146,6 +147,16 @@ db   = "database name"
 ```
 
 
+Insecure Options
+---------------
+
+Some options, such as loading playlists from the filesystem or url, have security implications. These options
+are disabled by default but may be reenabled via configuration file
+
+```
+[insecure]
+loading = true  # Allow loading playlists via URL or local filesystem
+```
 
 
 
