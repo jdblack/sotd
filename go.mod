@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/go-co-op/gocron v1.15.1
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/slack-go/slack v0.10.2
+	github.com/slack-go/slack v0.11.1
 	github.com/stretchr/testify v1.8.0
 	gopkg.in/ini.v1 v1.66.6
 	gorm.io/driver/mysql v1.3.4
