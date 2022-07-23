@@ -1,3 +1,7 @@
+
+![GitHub CI](https://github.com/jdblack/sotd/actions/workflows/testing.yml/badge.svg)
+
+
 # Song of the day bot
 
 This project is a Song of the Day Slack Bot that provides daily link from a 
