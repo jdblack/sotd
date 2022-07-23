@@ -10,7 +10,7 @@ require (
 	gopkg.in/ini.v1 v1.66.6
 	gorm.io/driver/mysql v1.3.4
 	gorm.io/driver/sqlite v1.3.1
-	gorm.io/gorm v1.23.4
+	gorm.io/gorm v1.23.8
 )
 
 require (
@@ -22,7 +22,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.9 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
-	github.com/stretchr/objx v0.4.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
