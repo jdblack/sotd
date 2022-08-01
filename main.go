@@ -2,16 +2,24 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/pborman/getopt/v2"
 	//  "log"
 )
 
+// Cfg is the main config object
 var Cfg Config
 
 func main() {
 	var err error
-	err = Cfg.load("~/.sotd.ini")
-	if err != nil {
-		panic(err)
+	optConfig := getopt.StringLong("config", 'c', "", "Config file ini")
+	getopt.Parse()
+
+	if *optConfig != "" {
+		err = Cfg.load(*optConfig)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	controller := Controller{}

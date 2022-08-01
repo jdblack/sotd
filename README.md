@@ -103,6 +103,21 @@ botToken=xoxb-#############-#############-########################
 appToken=xapp-#-###########-#############-################################################################
 ```
 
+### Docker Installation
+
+As mentioned, sotd can be deployed as a container as well, by setting envrionment variables.  For example,
+this will set up an ephemeral sotd bot
+
+```
+# An example 
+# cat > envfile <<EOF
+# SOTD_slack_botToken=xoxb-xxxxxxxxxxxx-xxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxx
+# SOTD_slack_appToken=xapp-x-xxxxxxxxxxx-xxxxxxxxxxxxx-xxxxxxxxxxxxxx
+# SOTD_database_type=sqlite
+# SOTD_database_path="file::memory:?cache=shared" 
+```
+
+
 ## Databases
 
 Sotd supports both SQLite and MySQL which may be chosen by setting type under
