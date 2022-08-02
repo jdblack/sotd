@@ -94,7 +94,7 @@ func (c *Controller) showPlaylist(in FromBot, args string) {
 	m := []string{
 		"> ",
 		fmt.Sprintf("*Playlist Channel Name*: %s", pl.Channel),
-		fmt.Sprintf("*Play Schedule* : %s", pl.Cron),
+		fmt.Sprintf("*Play Schedule* : `%s`", pl.Cron),
 		fmt.Sprintf("*%d Songs to come!*\n\n", len(pl.Songs)),
 		"> ",
 	}
