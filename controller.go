@@ -24,13 +24,14 @@ type menuItem struct {
 func (c *Controller) start() {
 	c.idleTimeout = 60
 	c.mainMenu = map[string]menuItem{
-		"hello":     {f: c.hello, o: "", h: "Say hello"},
-		"add":       {f: c.addSong, o: "CHANNEL* URL [Song description]", h: "Add a song to a play with optional description"},
-		"delete":    {f: c.deleteSong, o: "URL", h: "Delete song matching URL"},
-		"playlists": {f: c.listPlaylists, o: "", h: "List all running playlists"},
-		"load":      {f: c.loadPlaylist, o: "CHANNEL URL", h: "Import a json playlist from an URL"},
-		"stop":      {f: c.leaveChannel, o: "CHANNEL", h: "Tell SOTD to remove a playlist for a channel"},
-		"show":      {f: c.showPlaylist, o: "CHANNEL", h: "Show the playlist for a given channel"},
+		"hello":    {f: c.hello, o: "", h: "Say hello"},
+		"add":      {f: c.addSong, o: "CHANNEL* URL [Song description]", h: "Add a song to a play with optional description"},
+		"delete":   {f: c.deleteSong, o: "URL", h: "Delete song matching URL"},
+		"channels": {f: c.listPlaylists, o: "", h: "List all channels with plalylists"},
+		"load":     {f: c.loadPlaylist, o: "CHANNEL URL", h: "Import a json playlist from an URL"},
+		"schedule": {f: c.scheduleChannel, o: "CHANNEL CRON", h: "Set up the schedule for a channel"},
+		"stop":     {f: c.leaveChannel, o: "CHANNEL", h: "Tell SOTD to remove a playlist for a channel"},
+		"show":     {f: c.showPlaylist, o: "CHANNEL", h: "Show the playlist for a given channel"},
 		//		"channels":  {f: c.listChannels, h: "List Channels"},
 	}
 	var err error
@@ -104,7 +105,8 @@ func (c *Controller) showPlaylist(in FromBot, args string) {
 }
 
 func (c *Controller) loadPlaylist(in FromBot, args string) {
-	if !Cfg.GetBool("insecure_loading") {
+	insecure, _ := Cfg.GetBool("insecure_loading")
+	if insecure != true {
 		c.Tell(in.user, "Loading is not enabled in the insecure section of the config")
 		return
 	}
@@ -167,18 +169,28 @@ func (c *Controller) deleteSong(in FromBot, args string) {
 	c.Tell(in.user, fmt.Sprintf("I deleted %d songs", count))
 }
 
+func (c *Controller) scheduleChannel(in FromBot, args string) {
+	s := regexp.MustCompile(" +").Split(args, 2)
+	_, channel := ParseChannel(s[0])
+	cron := s[1]
+
+	if len(regexp.MustCompile(" +").Split(cron, -1)) != 5 {
+		c.Tell(in.user, "Please see the Cron docs at https://github.com/jdblack/sotd")
+		return
+	}
+
+	err := c.jukebox.ScheduleChannel(channel, cron)
+	if err != nil {
+		c.Tell(in.user, "I tried to change your schedule, but "+err.Error())
+	}
+	c.Tell(in.user, "Schedule updated for "+channel)
+
+}
+
 // AddSong blah
 func (c *Controller) addSong(in FromBot, args string) {
 	s := regexp.MustCompile(" +").Split(args, 3)
 	_, channel := ParseChannel(s[0])
-
-	channels, _ := c.bot.ChannelNames()
-	fmt.Printf("I want %s and we have %+v\n", channel, channels)
-	//	if !c.contains(channels, channel) {
-	//		msg := fmt.Sprintf("You need to invite me to %s first!", s[0])
-	//		c.Tell(in.user, msg)
-	//		return
-	//	}
 
 	if len(s) < 2 {
 		c.Tell(in.user, "To add a song, message me again with the following: ")

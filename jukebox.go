@@ -101,7 +101,7 @@ func (j *Jukebox) Init(cfg *Config) error {
 	var err error
 	j.config = cfg
 
-	dtype := j.config.GetStr("database_type")
+	dtype, err := j.config.GetStr("database_type")
 
 	j.Playset = make(chan Play, 100)
 
@@ -125,7 +125,10 @@ func (j *Jukebox) Init(cfg *Config) error {
 func (j *Jukebox) openSQLite() error {
 	var err error
 
-	path := j.config.GetStr("database_path")
+	path, err := j.config.GetStr("database_path")
+	if err != nil {
+		return err
+	}
 	j.db, err = gorm.Open(sqlite.Open(path), &gorm.Config{})
 	if err != nil {
 		return err
@@ -140,11 +143,26 @@ func (j *Jukebox) openSQLite() error {
 func (j *Jukebox) openMySQL() error {
 	var err error
 
-	host := j.config.GetStr("database_host")
-	port := j.config.GetStr("database_port")
-	user := j.config.GetStr("database_user")
-	pass := j.config.GetStr("database_pass")
-	db := j.config.GetStr("database_db")
+	host, err := j.config.GetStr("database_host")
+	if err != nil {
+		return err
+	}
+	port, err := j.config.GetStr("database_port")
+	if err != nil {
+		return err
+	}
+	user, err := j.config.GetStr("database_user")
+	if err != nil {
+		return err
+	}
+	pass, err := j.config.GetStr("database_pass")
+	if err != nil {
+		return err
+	}
+	db, err := j.config.GetStr("database_db")
+	if err != nil {
+		return err
+	}
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, pass, host, port, db)
 	dsn += "?charset=utf8mb4&parseTime=True&loc=Local"
 
@@ -296,6 +314,17 @@ func (j *Jukebox) DeleteSongByURL(url string) (int64, error) {
 	var songs []Song
 	res := j.db.Where("URL LIKE ?", url).Delete(&songs)
 	return res.RowsAffected, res.Error
+}
+
+func (j *Jukebox) ScheduleChannel(channel string, cron string) error {
+	var pl Playlist
+
+	res := j.db.Where("Channel LIKE ?", channel).First(&pl)
+	if res.Error != nil {
+		return res.Error
+	}
+	res = j.db.Model(&pl).Update("Cron", cron)
+	return res.Error
 }
 
 // AddSong creates a song and adds it to a channel

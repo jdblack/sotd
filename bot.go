@@ -63,12 +63,21 @@ func (s *SlackBot) message(event *slackevents.MessageEvent, message string) erro
 }
 
 func (s *SlackBot) connect() error {
-	fmt.Println("Connecting")
-	debug := Cfg.GetBool("slack_debug")
+	fmt.Println("Connecting to slack")
+	debug, _ := Cfg.GetBool("slack_debug")
+	bottoken, err := Cfg.GetStr("slack_botToken")
+	if err != nil {
+		return err
+	}
+	apptoken, err := Cfg.GetStr("slack_appToken")
+	if err != nil {
+		return err
+	}
+
 	s.api = slack.New(
-		Cfg.GetStr("slack_botToken"),
+		bottoken,
 		slack.OptionDebug(debug),
-		slack.OptionAppLevelToken(Cfg.GetStr("slack_appToken")),
+		slack.OptionAppLevelToken(apptoken),
 		slack.OptionLog(log.New(os.Stdout, "api: ", log.Lshortfile|log.LstdFlags)),
 	)
 

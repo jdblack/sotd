@@ -98,7 +98,7 @@ example, one can turn on event streaming by  running export `SOTD_slack_debug=tr
 ```
 
 [slack]
-# debug = true  # if you wish to see the bot event stream
+# debug = anything   # Setting debug to any value will turn it on
 botToken=xoxb-#############-#############-########################
 appToken=xapp-#-###########-#############-################################################################
 ```
@@ -172,8 +172,6 @@ are disabled by default but may be reenabled via configuration file
 loading = true  # Allow loading playlists via URL or local filesystem
 ```
 
-
-
 Design
 --------
 
@@ -195,6 +193,4 @@ This project is dedicated to my close friends Belmin, Brandon, Brian, Drew,
 Jaysen, Jeff, Jeremy and Jhurani.  You guys mean the world to me and I 
 literally can not wait for the day for our paths to cross again.  Come 
 see me =)
-
-
 
