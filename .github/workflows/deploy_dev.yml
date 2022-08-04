@@ -7,7 +7,7 @@ name: Deploy to Amazon ECS
 on:
   push:
     branches:
-      - release
+      - dev/**
 
 env:
   AWS_REGION: us-west-2                   # set this to your preferred AWS region, e.g. us-west-1
@@ -18,7 +18,7 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     environment: sotd
-    steps:
+    teps:
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -37,7 +37,7 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: latest
         run: |
           # Build a docker container and
           # push it to ECR so that it can
