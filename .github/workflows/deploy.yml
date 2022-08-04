@@ -17,7 +17,7 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    environment: production
+    environment: sotd
     steps:
       - name: Checkout
         uses: actions/checkout@v3
