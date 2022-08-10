@@ -32,7 +32,7 @@ func (c *Controller) start() {
 		"schedule": {f: c.scheduleChannel, o: "CHANNEL CRON", h: "Set up the schedule for a channel"},
 		"stop":     {f: c.leaveChannel, o: "CHANNEL", h: "Tell SOTD to remove a playlist for a channel"},
 		"show":     {f: c.showPlaylist, o: "CHANNEL", h: "Show the playlist for a given channel"},
-		//		"channels":  {f: c.listChannels, h: "List Channels"},
+		"whereami": {f: c.listChannels, h: "What channels am I in"},
 	}
 	var err error
 	fmt.Println("Controller  starting")
@@ -171,15 +171,32 @@ func (c *Controller) deleteSong(in FromBot, args string) {
 
 func (c *Controller) scheduleChannel(in FromBot, args string) {
 	s := regexp.MustCompile(" +").Split(args, 2)
-	_, channel := ParseChannel(s[0])
-	cron := s[1]
-
-	if len(regexp.MustCompile(" +").Split(cron, -1)) != 5 {
-		c.Tell(in.user, "Please see the Cron docs at https://github.com/jdblack/sotd")
+	if len(s) != 2 {
+		c.Tell(in.user, "please use:  schedule  #channel_name new crontab")
 		return
 	}
 
-	err := c.jukebox.ScheduleChannel(channel, cron)
+	_, channel := ParseChannel(s[0])
+	cron := s[1]
+
+	there, err := c.bot.InChannel(channel)
+	if err != nil {
+		c.Tell(in.user, "I needed to find where I was and couldn't "+err.Error())
+		return
+	}
+
+	if !there {
+		c.Tell(in.user, "Please invite me to that channel first!")
+		return
+	}
+
+	if len(regexp.MustCompile(" +").Split(cron, -1)) != 5 {
+		c.Tell(in.user, "Wrong cron format. Please use  MIN HOUR DAY_OF_MONTH MONTH DAY_OF_WEEK")
+		c.Tell(in.user, "Please see the Cron docs at https://github.com/jdblack/sotd for more details")
+		return
+	}
+
+	_, err = c.jukebox.ScheduleChannel(channel, cron)
 	if err != nil {
 		c.Tell(in.user, "I tried to change your schedule, but "+err.Error())
 	}
@@ -191,6 +208,17 @@ func (c *Controller) scheduleChannel(in FromBot, args string) {
 func (c *Controller) addSong(in FromBot, args string) {
 	s := regexp.MustCompile(" +").Split(args, 3)
 	_, channel := ParseChannel(s[0])
+
+	there, err := c.bot.InChannel(channel)
+	if err != nil {
+		c.Tell(in.user, "I needed to find where I was and couldn't "+err.Error())
+		return
+	}
+
+	if !there {
+		c.Tell(in.user, "Please invite me to that channel first!")
+		return
+	}
 
 	if len(s) < 2 {
 		c.Tell(in.user, "To add a song, message me again with the following: ")
@@ -212,7 +240,7 @@ func (c *Controller) addSong(in FromBot, args string) {
 		Description: desc,
 	}
 
-	err := c.jukebox.AddSong(song, channel)
+	err = c.jukebox.AddSong(song, channel)
 	if err != nil {
 		c.Tell(in.user, "I had trouble adding "+song.URL+" to "+channel)
 		return

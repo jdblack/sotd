@@ -35,9 +35,8 @@ type Play struct {
 // FIXME Need a way to change the cron for a playlist
 type Playlist struct {
 	gorm.Model
-	Channel string `gorm:"unique"`
-	//Cron string `gorm:"default:0 18 * * 1-5"`
-	Cron     string `gorm:"default:*/5 * * * *"`
+	Channel  string `gorm:"unique"`
+	Cron     string `gorm:"default:0 18 * * 1-5"`
 	Songs    []Song `gorm:"many2many:song_playlist;"`
 	Playlogs []Playlog
 }
@@ -316,15 +315,19 @@ func (j *Jukebox) DeleteSongByURL(url string) (int64, error) {
 	return res.RowsAffected, res.Error
 }
 
-func (j *Jukebox) ScheduleChannel(channel string, cron string) error {
+func (j *Jukebox) ScheduleChannel(channel string, cron string) (bool, error) {
 	var pl Playlist
+	created := false
 
-	res := j.db.Where("Channel LIKE ?", channel).First(&pl)
+	res := j.db.Where("Channel LIKE ?", channel).FirstOrCreate(&pl)
+	fmt.Printf("============")
+	fmt.Printf("%+v", res)
+	fmt.Printf("============")
 	if res.Error != nil {
-		return res.Error
+		return created, res.Error
 	}
 	res = j.db.Model(&pl).Update("Cron", cron)
-	return res.Error
+	return created, res.Error
 }
 
 // AddSong creates a song and adds it to a channel

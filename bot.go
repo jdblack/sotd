@@ -45,6 +45,20 @@ func (s *SlackBot) ChannelNames() ([]string, error) {
 	return chans, err
 }
 
+// InChannel checks if we are in a channel
+func (s *SlackBot) InChannel(name string) (bool, error) {
+	channels, err := s.ChannelNames()
+	if err != nil {
+		return false, err
+	}
+	for _, x := range channels {
+		if x == name {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (s *SlackBot) Channels() ([]slack.Channel, error) {
 	up := slack.GetConversationsForUserParameters{UserID: s.userID}
 	channels, _, err := s.api.GetConversationsForUser(&up)
