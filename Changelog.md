@@ -1,4 +1,7 @@
 
+0.3.0
+- jblack - Now support private channels
+- jblack - Also have play history
 0.1.1
 - jblack - Added github workflows
 - jblack - fixed Testing

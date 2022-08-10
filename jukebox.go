@@ -35,19 +35,10 @@ type Play struct {
 // FIXME Need a way to change the cron for a playlist
 type Playlist struct {
 	gorm.Model
-	Channel  string `gorm:"unique"`
-	Cron     string `gorm:"default:0 18 * * 1-5"`
-	Songs    []Song `gorm:"many2many:song_playlist;"`
-	Playlogs []Playlog
-}
-
-// Playlog remembers when songs were played
-// FIXME We need a way to recite this history
-type Playlog struct {
-	gorm.Model
-	SongID     uint
-	PlaylistID uint
-	backfill   bool
+	Channel string `gorm:"unique"`
+	Cron    string `gorm:"default:0 18 * * 1-5"`
+	Songs   []Song `gorm:"many2many:song_playlist;"`
+	History []Song `gorm:"many2many:history;"`
 }
 
 // Song is self descripitive
@@ -58,7 +49,18 @@ type Song struct {
 	User        string
 	RealName    string
 	Playlists   []Playlist `gorm:"many2many:song_playlist;"`
-	Playlogs    []Playlog
+	History     []Playlist `gorm:"many2many:history;"`
+}
+
+// ChannelHistory history
+func (j *Jukebox) ChannelHistory(channel string) {
+	pl, _ := j.GetPlaylist(channel)
+	fmt.Printf("=========\n")
+
+	res := j.db.Joins("Playlog").Find(&pl)
+	fmt.Printf("I have %+v\n", res)
+	fmt.Printf("%+v\n", pl)
+	fmt.Printf("=========\n")
 }
 
 func (j *Jukebox) loadSongs(in FromBot, args string) ([]Song, error) {
@@ -132,7 +134,7 @@ func (j *Jukebox) openSQLite() error {
 	if err != nil {
 		return err
 	}
-	err = j.db.AutoMigrate(&Song{}, &Playlist{}, &Playlog{})
+	err = j.db.AutoMigrate(&Song{}, &Playlist{})
 	if err == nil {
 		j.ready = true
 	}
@@ -186,25 +188,11 @@ func NewJukebox(cfg *Config) (*Jukebox, error) {
 // GetPlaylist get a playlist
 func (j *Jukebox) GetPlaylist(channel string) (Playlist, error) {
 	playlist := Playlist{Channel: channel}
-	res := j.db.Preload("Songs").Where(playlist).Find(&playlist)
+	res := j.db.Preload("History").Preload("Songs").Where(playlist).Find(&playlist)
 	if res.RowsAffected == 0 {
 		return Playlist{}, errors.New("Unable to find playlist")
 	}
 	return playlist, res.Error
-}
-
-//ChannelHistory is supposed to list the songs that have previously
-// played in the channel  FIXME It does not
-func (j *Jukebox) ChannelHistory(channel string) error {
-	playlist := Playlist{Channel: channel}
-
-	res := j.db.Preload("Playlogs").Find(&playlist)
-	fmt.Printf("============\n")
-	for _, pl := range playlist.Playlogs {
-		fmt.Printf("%+v\n", pl)
-	}
-	fmt.Printf("============\n")
-	return res.Error
 }
 
 func (j *Jukebox) ensurePlaylist(channel string) (Playlist, error) {
@@ -295,9 +283,8 @@ func (j *Jukebox) spinPlaylist(name string) error {
 
 	fmt.Printf("Storing record\n")
 
-	log := Playlog{SongID: play.song.ID, PlaylistID: pl.ID, backfill: play.backfill}
-	res := j.db.Create(&log)
-	return res.Error
+	res := j.db.Model(&pl).Association("History").Append(&play.song)
+	return res
 }
 
 //DeleteChannel removes a channel
@@ -315,18 +302,18 @@ func (j *Jukebox) DeleteSongByURL(url string) (int64, error) {
 	return res.RowsAffected, res.Error
 }
 
+// ScheduleChannel schedules a channel
 func (j *Jukebox) ScheduleChannel(channel string, cron string) (bool, error) {
-	var pl Playlist
 	created := false
 
-	res := j.db.Where("Channel LIKE ?", channel).FirstOrCreate(&pl)
-	fmt.Printf("============")
-	fmt.Printf("%+v", res)
-	fmt.Printf("============")
+	pl := Playlist{Channel: channel, Cron: cron}
+
+	res := j.db.FirstOrCreate(&pl, Playlist{Channel: channel})
 	if res.Error != nil {
 		return created, res.Error
 	}
 	res = j.db.Model(&pl).Update("Cron", cron)
+	j.schedulePlaylists()
 	return created, res.Error
 }
 

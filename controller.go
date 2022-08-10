@@ -98,10 +98,24 @@ func (c *Controller) showPlaylist(in FromBot, args string) {
 		fmt.Sprintf("*%d Songs to come!*\n\n", len(pl.Songs)),
 		"> ",
 	}
-	for _, s := range pl.Songs {
-		m = append(m, fmt.Sprintf("<@%s> _(%s)_ : `%s` %s", s.User, s.RealName, s.URL, s.Description))
+	if len(pl.Songs) > 0 {
+		m = append(m, fmt.Sprintf("\n*%d songs to come:*\n", len(pl.Songs)))
+		for _, s := range pl.Songs {
+			m = append(m, fmt.Sprintf("<@%s> _(%s)_ : `%s` %s", s.User, s.RealName, s.URL, s.Description))
+		}
 	}
+
+	if len(pl.History) > 0 {
+		m = append(m, fmt.Sprintf("\n*%d Past Songs:*\n", len(pl.History)))
+		for i := len(pl.History) - 1; i >= 0; i-- {
+			s := pl.History[i]
+			m = append(m, fmt.Sprintf("<@%s> _(%s)_ : `%s` %s", s.User, s.RealName, s.URL, s.Description))
+		}
+
+	}
+
 	c.Tell(in.user, strings.Join(m, "\n"))
+	c.jukebox.ChannelHistory(ch)
 }
 
 func (c *Controller) loadPlaylist(in FromBot, args string) {

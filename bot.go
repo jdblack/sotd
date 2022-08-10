@@ -35,7 +35,8 @@ type ToBot struct {
 
 // ChannelNames  Get the  list
 func (s *SlackBot) ChannelNames() ([]string, error) {
-	up := slack.GetConversationsForUserParameters{UserID: s.userID}
+	types := []string{"public_channel", "private_channel"}
+	up := slack.GetConversationsForUserParameters{UserID: s.userID, Types: types}
 	channels, _, err := s.api.GetConversationsForUser(&up)
 	chans := []string{}
 	for _, channel := range channels {
