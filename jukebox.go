@@ -210,7 +210,7 @@ func (j *Jukebox) ensurePlaylist(channel string) (Playlist, error) {
 //GetPlaylists gets all the playlists
 func (j *Jukebox) GetPlaylists() []Playlist {
 	var playlists []Playlist
-	j.db.Find(&playlists)
+	j.db.Preload("Songs").Find(&playlists)
 	return playlists
 }
 

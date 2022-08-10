@@ -24,15 +24,14 @@ type menuItem struct {
 func (c *Controller) start() {
 	c.idleTimeout = 60
 	c.mainMenu = map[string]menuItem{
-		"hello":    {f: c.hello, o: "", h: "Say hello"},
-		"add":      {f: c.addSong, o: "CHANNEL* URL [Song description]", h: "Add a song to a play with optional description"},
+		"add":      {f: c.addSong, o: "CHANNEL URL [Song description]", h: "Add a song to a play with optional description"},
+		"channels": {f: c.listPlaylists, o: "", h: "Show all my channels"},
 		"delete":   {f: c.deleteSong, o: "URL", h: "Delete song matching URL"},
-		"channels": {f: c.listPlaylists, o: "", h: "List all channels with plalylists"},
-		"load":     {f: c.loadPlaylist, o: "CHANNEL URL", h: "Import a json playlist from an URL"},
-		"schedule": {f: c.scheduleChannel, o: "CHANNEL CRON", h: "Set up the schedule for a channel"},
+		"load":     {f: c.loadPlaylist, o: "CHANNEL URL", h: "Import a json playlist from an URL (requires insecure.load enabled)"},
+		"schedule": {f: c.scheduleChannel, o: "CHANNEL CRON", h: "Change the schedule for a channel"},
 		"stop":     {f: c.leaveChannel, o: "CHANNEL", h: "Tell SOTD to remove a playlist for a channel"},
 		"show":     {f: c.showPlaylist, o: "CHANNEL", h: "Show the playlist for a given channel"},
-		"whereami": {f: c.listChannels, h: "What channels am I in"},
+		"hello":    {f: c.hello, o: "", h: "Say hello"},
 	}
 	var err error
 	fmt.Println("Controller  starting")
@@ -99,17 +98,18 @@ func (c *Controller) showPlaylist(in FromBot, args string) {
 		"> ",
 	}
 	if len(pl.Songs) > 0 {
-		m = append(m, fmt.Sprintf("\n*%d songs to come:*\n", len(pl.Songs)))
 		for _, s := range pl.Songs {
 			m = append(m, fmt.Sprintf("<@%s> _(%s)_ : `%s` %s", s.User, s.RealName, s.URL, s.Description))
 		}
 	}
 
 	if len(pl.History) > 0 {
+		msg := "%s originally by %s on %s : %s"
 		m = append(m, fmt.Sprintf("\n*%d Past Songs:*\n", len(pl.History)))
 		for i := len(pl.History) - 1; i >= 0; i-- {
 			s := pl.History[i]
-			m = append(m, fmt.Sprintf("<@%s> _(%s)_ : `%s` %s", s.User, s.RealName, s.URL, s.Description))
+			when := s.CreatedAt.Format(time.UnixDate)
+			m = append(m, fmt.Sprintf(msg, s.URL, s.RealName, when, s.Description))
 		}
 
 	}
@@ -127,7 +127,8 @@ func (c *Controller) loadPlaylist(in FromBot, args string) {
 
 	songs, err := c.jukebox.loadSongs(in, args)
 	if err != nil {
-		c.Tell(in.user, fmt.Sprintf("There was a problem, but I was able to add %d songs. The error was %s", len(songs), err.Error()))
+		msg := "I had trouble but I was able to add %d songs. The error was %s"
+		c.Tell(in.user, fmt.Sprintf(msg, len(songs), err.Error()))
 		return
 	}
 	c.Tell(in.user, fmt.Sprintf("I loaded %d songs", len(songs)))
@@ -135,9 +136,13 @@ func (c *Controller) loadPlaylist(in FromBot, args string) {
 
 func (c *Controller) listPlaylists(in FromBot, args string) {
 	playlists := c.jukebox.GetPlaylists()
-	for _, pl := range playlists {
-		c.Tell(in.user, fmt.Sprintf("%s : %s", pl.Channel, pl.Cron))
+	if len(playlists) == 0 {
+		c.Tell(in.user, "No active playlists yet! Please add some songs!")
 	}
+	for _, pl := range playlists {
+		c.Tell(in.user, fmt.Sprintf("Name: %s Queue: %d Schedule: %s", pl.Channel, len(pl.Songs), pl.Cron))
+	}
+	c.listChannels(in, args)
 }
 
 func (c *Controller) leaveChannel(in FromBot, args string) {
@@ -287,7 +292,7 @@ func (c *Controller) listChannels(in FromBot, args string) {
 	for _, channel := range channels {
 		chans = append(chans, "#"+channel)
 	}
-	c.Tell(in.user, "I am in channels"+strings.Join(chans, ", "))
+	c.Tell(in.user, "I have been invited to :"+strings.Join(chans, ", "))
 }
 
 //Commands is the main command handler. To add a command, add to the

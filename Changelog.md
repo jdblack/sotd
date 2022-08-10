@@ -1,4 +1,6 @@
 
+0.3.1
+- jblack - Minor tuning
 0.3.0
 - jblack - Now support private channels
 - jblack - Also have play history
