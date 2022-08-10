@@ -1,0 +1,14 @@
+[Unit]
+Description=Song of the Day
+Documentation=https://github.com/jdblack/sotd
+
+[Service]
+Restart=always
+ExecStart=/usr/local/bin/sotd -c /etc/sotd.ini
+ExecReload=/bin/kill -HUP $MAINPID
+TimeoutStopSec=20s
+SendSIGKILL=no
+
+[Install]
+WantedBy=multi-user.target
+

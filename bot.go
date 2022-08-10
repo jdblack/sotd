@@ -148,15 +148,21 @@ func (s *SlackBot) handleMessage(event *slackevents.MessageEvent) {
 		// Forget about the past
 		return
 	}
+
+	var name string
+
 	fmt.Printf("Messsage received: %s:%s\n", event.User, event.Text)
 	userinfo, err := s.api.GetUserInfo(event.User)
-	if err != nil {
+	if err == nil {
+		name = userinfo.RealName
+	} else {
 		fmt.Println("Unable to find user:" + event.User)
+		name = event.User
 	}
 
 	s.frombot <- FromBot{
 		message:  event.Text,
-		fullName: userinfo.RealName,
+		fullName: name,
 		user:     event.User,
 	}
 }
