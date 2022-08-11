@@ -190,46 +190,6 @@ func (c *Controller) deleteSong(in FromBot, args string) {
 	c.Tell(in.user, fmt.Sprintf("I deleted %d songs", count))
 }
 
-func (c *Controller) scheduleChannel(in FromBot, args string) {
-	s := regexp.MustCompile(" +").Split(args, 2)
-	if len(s) != 2 {
-		c.Tell(in.user, "please use:  schedule  #channel_name new crontab")
-		return
-	}
-	channel, err := c.parseChannel(s[0])
-	cron := s[1]
-
-	if len(regexp.MustCompile(" +").Split(cron, -1)) != 5 {
-		c.Tell(in.user, "Wrong cron format. Please use  MIN HOUR DAY_OF_MONTH MONTH DAY_OF_WEEK")
-		c.Tell(in.user, "Please see the Cron docs at https://github.com/jdblack/sotd for more details")
-		return
-	}
-
-	_, err = c.jukebox.ScheduleChannel(channel, cron)
-	if err != nil {
-		c.Tell(in.user, "I tried to change your schedule, but "+err.Error())
-	}
-	c.Tell(in.user, "Schedule updated for "+channel)
-
-}
-
-func (c *Controller) parseChannel(in_channel string) (string, error) {
-	channel, err := c.bot.parseChannel(in_channel)
-	if err != nil {
-		return channel, err
-	}
-	present, err := c.bot.InChannel(channel)
-	if err != nil {
-		return channel, err
-	}
-	if !present {
-		msg := fmt.Sprintf("Not in channel %s ( %s)", in_channel, channel)
-		return channel, errors.New(msg)
-	}
-	return channel, nil
-}
-
-// AddSong blah
 func (c *Controller) addSong(in FromBot, args string) {
 	s := regexp.MustCompile(" +").Split(args, 3)
 
@@ -266,6 +226,51 @@ func (c *Controller) addSong(in FromBot, args string) {
 	}
 	c.Tell(in.user, "I have added "+song.URL+" to "+channel)
 }
+
+func (c *Controller) scheduleChannel(in FromBot, args string) {
+	s := regexp.MustCompile(" +").Split(args, 2)
+	if len(s) != 2 {
+		c.Tell(in.user, "please use:  schedule  #channel_name new crontab")
+		return
+	}
+	channel, err := c.parseChannel(s[0])
+	if err != nil {
+		fmt.Printf("I was unable to parse %s becuase of %s\n", channel, err.Error())
+		return
+	}
+	cron := s[1]
+
+	if len(regexp.MustCompile(" +").Split(cron, -1)) != 5 {
+		c.Tell(in.user, "Wrong cron format. Please use  MIN HOUR DAY_OF_MONTH MONTH DAY_OF_WEEK")
+		c.Tell(in.user, "Please see the Cron docs at https://github.com/jdblack/sotd for more details")
+		return
+	}
+
+	_, err = c.jukebox.ScheduleChannel(channel, cron)
+	if err != nil {
+		c.Tell(in.user, "I tried to change your schedule, but "+err.Error())
+	}
+	c.Tell(in.user, "Schedule updated for "+channel)
+
+}
+
+func (c *Controller) parseChannel(in_channel string) (string, error) {
+	channel, err := c.bot.parseChannel(in_channel)
+	if err != nil {
+		return channel, err
+	}
+	present, err := c.bot.InChannel(channel)
+	if err != nil {
+		return channel, err
+	}
+	if !present {
+		msg := fmt.Sprintf("Not in channel %s ( %s)", in_channel, channel)
+		return channel, errors.New(msg)
+	}
+	return channel, nil
+}
+
+// AddSong blah
 
 // Tell a user something
 func (c *Controller) Tell(user string, message string) {
