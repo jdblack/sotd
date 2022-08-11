@@ -56,6 +56,7 @@ func (s *SlackBot) parseChannel(channel string) (string, error) {
 
 	for _, channel := range channels {
 		if channel.ID == id {
+			fmt.Printf("Comparing %s to %s\n", channel.ID, id)
 			return channel.Name, nil
 		}
 	}
