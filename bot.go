@@ -56,7 +56,7 @@ func (s *SlackBot) parseChannel(channel string) (string, error) {
 
 	for _, channel := range channels {
 		fmt.Printf("Comparing %s to %s\n", channel.ID, id)
-		if channel.ID == id {
+		if strings.HasSuffix(id, channel.ID) {
 			return channel.Name, nil
 		}
 	}
