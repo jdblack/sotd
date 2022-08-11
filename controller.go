@@ -140,6 +140,7 @@ func (c *Controller) listPlaylists(in FromBot, args string) {
 		c.Tell(in.user, "No active playlists yet! Please add some songs!")
 	}
 	for _, pl := range playlists {
+		fmt.Printf("%+v\n", pl)
 		c.Tell(in.user, fmt.Sprintf("Name: %s Queue: %d Schedule: %s", pl.Channel, len(pl.Songs), pl.Cron))
 	}
 	c.listChannels(in, args)

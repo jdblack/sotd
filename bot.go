@@ -49,6 +49,7 @@ func (s *SlackBot) ChannelNames() ([]string, error) {
 // InChannel checks if we are in a channel
 func (s *SlackBot) InChannel(name string) (bool, error) {
 	channels, err := s.ChannelNames()
+	fmt.Printf("I need to see if we are in %s. We have %+v", name, channels)
 	if err != nil {
 		return false, err
 	}
