@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
@@ -33,6 +35,34 @@ type ToBot struct {
 	channel string
 }
 
+func (s *SlackBot) parseChannel(channel string) (string, error) {
+
+	cleaned := strings.Trim(channel, "<>")
+	id, name, found := strings.Cut(cleaned, "|")
+	if !found {
+		return name, errors.New("Could not parse channel")
+	}
+	if len(name) > 0 {
+		return name, nil
+	}
+
+	// No name, but we have an ID. Lets find it out
+	types := []string{"public_channel", "private_channel"}
+	up := slack.GetConversationsForUserParameters{UserID: s.userID, Types: types}
+	channels, _, err := s.api.GetConversationsForUser(&up)
+	if err != nil {
+		return id, errors.New("Unable to get user conversations")
+	}
+
+	for _, channel := range channels {
+		if channel.ID == id {
+			return channel.Name, nil
+		}
+	}
+	return id, errors.New("Unable to find channel id")
+
+}
+
 // ChannelNames  Get the  list
 func (s *SlackBot) ChannelNames() ([]string, error) {
 	types := []string{"public_channel", "private_channel"}
@@ -49,7 +79,6 @@ func (s *SlackBot) ChannelNames() ([]string, error) {
 // InChannel checks if we are in a channel
 func (s *SlackBot) InChannel(name string) (bool, error) {
 	channels, err := s.ChannelNames()
-	fmt.Printf("I need to see if we are in %s. We have %+v", name, channels)
 	if err != nil {
 		return false, err
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -195,20 +196,8 @@ func (c *Controller) scheduleChannel(in FromBot, args string) {
 		c.Tell(in.user, "please use:  schedule  #channel_name new crontab")
 		return
 	}
-
-	_, channel := ParseChannel(s[0])
+	channel, err := c.parseChannel(s[0])
 	cron := s[1]
-
-	there, err := c.bot.InChannel(channel)
-	if err != nil {
-		c.Tell(in.user, "I needed to find where I was and couldn't "+err.Error())
-		return
-	}
-
-	if !there {
-		c.Tell(in.user, "Please invite me to that channel first!")
-		return
-	}
 
 	if len(regexp.MustCompile(" +").Split(cron, -1)) != 5 {
 		c.Tell(in.user, "Wrong cron format. Please use  MIN HOUR DAY_OF_MONTH MONTH DAY_OF_WEEK")
@@ -224,19 +213,29 @@ func (c *Controller) scheduleChannel(in FromBot, args string) {
 
 }
 
+func (c *Controller) parseChannel(in_channel string) (string, error) {
+	channel, err := c.bot.parseChannel(in_channel)
+	if err != nil {
+		return channel, err
+	}
+	present, err := c.bot.InChannel(channel)
+	if err != nil {
+		return channel, err
+	}
+	if !present {
+		msg := fmt.Sprintf("Not in channel %s ( %s)", in_channel, channel)
+		return channel, errors.New(msg)
+	}
+	return channel, nil
+}
+
 // AddSong blah
 func (c *Controller) addSong(in FromBot, args string) {
 	s := regexp.MustCompile(" +").Split(args, 3)
-	_, channel := ParseChannel(s[0])
 
-	there, err := c.bot.InChannel(channel)
+	channel, err := c.parseChannel(s[0])
 	if err != nil {
-		c.Tell(in.user, "I needed to find where I was and couldn't "+err.Error())
-		return
-	}
-
-	if !there {
-		c.Tell(in.user, "Please invite me to that channel first!")
+		c.Tell(in.user, "We have with that channel "+err.Error())
 		return
 	}
 
