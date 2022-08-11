@@ -199,6 +199,7 @@ func (j *Jukebox) ensurePlaylist(channel string) (Playlist, error) {
 	playlist := Playlist{Channel: channel}
 	res := j.db.Find(&playlist)
 	found := res.RowsAffected > 0
+	fmt.Printf("ensureplaylist I found %+v\n", res)
 
 	res = j.db.Preload("Songs").Where(playlist).FirstOrCreate(&playlist)
 	if !found {
@@ -257,7 +258,6 @@ func (j *Jukebox) spinPlaylist(name string) error {
 	channel, err := j.ensurePlaylist(name)
 	play := Play{channel: name, backfill: false}
 	fmt.Printf("Spin a song for %s\n", name)
-	fmt.Printf("For playlist I got %+v\n", channel)
 
 	if err != nil {
 		return err
