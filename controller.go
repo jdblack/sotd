@@ -116,7 +116,6 @@ func (c *Controller) showPlaylist(in FromBot, args string) {
 	}
 
 	c.Tell(in.user, strings.Join(m, "\n"))
-	c.jukebox.ChannelHistory(ch)
 }
 
 func (c *Controller) loadPlaylist(in FromBot, args string) {

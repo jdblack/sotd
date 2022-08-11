@@ -52,17 +52,6 @@ type Song struct {
 	History     []Playlist `gorm:"many2many:history;"`
 }
 
-// ChannelHistory history
-func (j *Jukebox) ChannelHistory(channel string) {
-	pl, _ := j.GetPlaylist(channel)
-	fmt.Printf("=========\n")
-
-	res := j.db.Joins("Playlog").Find(&pl)
-	fmt.Printf("I have %+v\n", res)
-	fmt.Printf("%+v\n", pl)
-	fmt.Printf("=========\n")
-}
-
 func (j *Jukebox) loadSongs(in FromBot, args string) ([]Song, error) {
 	// FIXME Need a way to safely override Real Name
 	var songs []Song
@@ -196,12 +185,12 @@ func (j *Jukebox) GetPlaylist(channel string) (Playlist, error) {
 }
 
 func (j *Jukebox) ensurePlaylist(channel string) (Playlist, error) {
-	playlist := Playlist{Channel: channel}
-	res := j.db.Find(&playlist)
+	var playlist Playlist
+	needle := Playlist{Channel: channel}
+	res := j.db.Find(&playlist, needle)
 	found := res.RowsAffected > 0
-	fmt.Printf("ensureplaylist I found %+v\n", res)
 
-	res = j.db.Preload("Songs").Where(playlist).FirstOrCreate(&playlist)
+	res = j.db.Preload("Songs").FirstOrCreate(&playlist, needle)
 	if !found {
 		j.schedulePlaylists()
 	}
