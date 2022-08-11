@@ -48,6 +48,8 @@ func (s *SlackBot) parseChannel(channel string) (string, error) {
 	}
 
 	// No name, but we have an ID. Lets find it out
+	fmt.Printf("parse channel needs to search for the channel name %s\n", channel)
+
 	types := []string{"public_channel", "private_channel"}
 	up := slack.GetConversationsForUserParameters{UserID: s.userID, Types: types}
 	channels, _, err := s.api.GetConversationsForUser(&up)
@@ -58,6 +60,7 @@ func (s *SlackBot) parseChannel(channel string) (string, error) {
 	for _, channel := range channels {
 		fmt.Printf("Comparing %s to %s\n", channel.ID, id)
 		if strings.HasSuffix(id, channel.ID) {
+			fmt.Printf("I found it here: %+v\n", channel)
 			return channel.Name, nil
 		}
 	}
