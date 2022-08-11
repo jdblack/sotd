@@ -105,7 +105,7 @@ func (c *Controller) showPlaylist(in FromBot, args string) {
 	}
 
 	if len(pl.History) > 0 {
-		msg := "%s originally by %s on %s : %s"
+		msg := "`%s` originally by %s on %s : %s"
 		m = append(m, fmt.Sprintf("\n*%d Past Songs:*\n", len(pl.History)))
 		for i := len(pl.History) - 1; i >= 0; i-- {
 			s := pl.History[i]

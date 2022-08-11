@@ -37,7 +37,6 @@ type ToBot struct {
 
 func (s *SlackBot) parseChannel(channel string) (string, error) {
 
-	fmt.Printf("parse Channel start for %s\n", channel)
 	cleaned := strings.Trim(channel, "<>")
 	id, name, found := strings.Cut(cleaned, "|")
 	if !found {
@@ -58,9 +57,7 @@ func (s *SlackBot) parseChannel(channel string) (string, error) {
 	}
 
 	for _, channel := range channels {
-		fmt.Printf("Comparing %s to %s\n", channel.ID, id)
 		if strings.HasSuffix(id, channel.ID) {
-			fmt.Printf("I found it here: %+v\n", channel)
 			return channel.Name, nil
 		}
 	}
@@ -84,7 +81,6 @@ func (s *SlackBot) ChannelNames() ([]string, error) {
 // InChannel checks if we are in a channel
 func (s *SlackBot) InChannel(name string) (bool, error) {
 	channels, err := s.ChannelNames()
-	fmt.Printf("Inchannel looking to see if we are in %s\n", name)
 	if err != nil {
 		return false, err
 	}
