@@ -66,7 +66,6 @@ func ParseChannel(channel string) (string, string) {
 	id, name, found := strings.Cut(cleaned, "|")
 	if !found {
 		name = id
-		id = ""
 	}
 	return id, name
 }
