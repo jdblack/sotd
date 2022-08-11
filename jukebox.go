@@ -256,13 +256,15 @@ func (j *Jukebox) spinPlaylist(name string) error {
 	var err error
 	channel, err := j.ensurePlaylist(name)
 	play := Play{channel: name, backfill: false}
-	fmt.Println("Spin a song for " + name)
+	fmt.Printf("Spin a song for %s\n", name)
+	fmt.Printf("For playlist I got %+v\n", channel)
 
 	if err != nil {
 		return err
 	}
 
 	if len(channel.Songs) == 0 {
+		fmt.Printf("%s is out of songs, spinning a random song\n", name)
 		play.backfill = true
 		play.song, err = j.randomSong()
 	} else {
