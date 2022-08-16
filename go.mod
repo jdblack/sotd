@@ -9,7 +9,7 @@ require (
 	github.com/slack-go/slack v0.11.2
 	github.com/stretchr/testify v1.8.0
 	gopkg.in/ini.v1 v1.66.6
-	gorm.io/driver/mysql v1.3.5
+	gorm.io/driver/mysql v1.3.6
 	gorm.io/driver/sqlite v1.3.6
 	gorm.io/gorm v1.23.8
 )
