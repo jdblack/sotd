@@ -2,12 +2,14 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/mitchellh/go-homedir"
 	"gopkg.in/ini.v1"
 )
@@ -61,6 +63,7 @@ func LoadFile(path string) ([]byte, error) {
 	return body, nil
 }
 
+// ParseChannel splits the slack channel string into the channel id and channel name
 func ParseChannel(channel string) (string, string) {
 	cleaned := strings.Trim(channel, "<>")
 	id, name, found := strings.Cut(cleaned, "|")
@@ -70,6 +73,49 @@ func ParseChannel(channel string) (string, string) {
 	return id, name
 }
 
+// ParseURL removes the <> from slack urls
 func ParseURL(url string) string {
 	return strings.Trim(url, "<>")
+}
+
+// URLCache looks up urls, with caching
+func URLCache() (f func(string) (string, error)) {
+	cache := make(map[string]string)
+	f = func(url string) (string, error) {
+		if val, ok := cache[url]; ok {
+			return val, nil
+		}
+		title, err := HTMLTitle(url)
+		if err == nil {
+			cache[url] = title
+		}
+		return title, err
+	}
+	return f
+}
+
+// HTMLTitle returns the title for a page
+func HTMLTitle(page string) (string, error) {
+	url := ParseURL(page)
+	resp, err := http.Get(url)
+
+	if err != nil {
+		fmt.Printf("I got an error: -%s- %s\n", url, err)
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		msg := fmt.Sprintf("failed to fetch data: %d %s", resp.StatusCode, resp.Status)
+		return msg, errors.New(msg)
+	}
+
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	title := doc.Find("title").Text()
+	return title, nil
 }

@@ -14,6 +14,7 @@ type Controller struct {
 	jukebox     *Jukebox
 	mainMenu    map[string]menuItem
 	idleTimeout int
+	cache       func(string) (string, error)
 }
 
 type menuItem struct {
@@ -35,6 +36,7 @@ func (c *Controller) start() {
 		"hello":    {f: c.hello, o: "", h: "Say hello"},
 	}
 	var err error
+	c.cache = URLCache()
 	fmt.Println("Controller  starting")
 	c.bot, err = NewBot()
 	if err != nil {
@@ -100,17 +102,19 @@ func (c *Controller) showPlaylist(in FromBot, args string) {
 	}
 	if len(pl.Songs) > 0 {
 		for _, s := range pl.Songs {
-			m = append(m, fmt.Sprintf("<@%s> _(%s)_ : `%s` %s", s.User, s.RealName, s.URL, s.Description))
+			title, _ := c.cache(s.URL)
+			m = append(m, fmt.Sprintf("<@%s> _(%s)_ : `%s - %s` %s", s.User, s.RealName, title, s.URL, s.Description))
 		}
 	}
 
 	if len(pl.History) > 0 {
-		msg := "`%s` originally by %s on %s : %s"
+		msg := "`%s - %s` originally by %s on %s : %s"
 		m = append(m, fmt.Sprintf("\n*%d Past Songs:*\n", len(pl.History)))
 		for i := len(pl.History) - 1; i >= 0; i-- {
 			s := pl.History[i]
 			when := s.CreatedAt.Format(time.UnixDate)
-			m = append(m, fmt.Sprintf(msg, s.URL, s.RealName, when, s.Description))
+			title, _ := c.cache(s.URL)
+			m = append(m, fmt.Sprintf(msg, s.URL, title, s.RealName, when, s.Description))
 		}
 
 	}
@@ -253,8 +257,8 @@ func (c *Controller) scheduleChannel(in FromBot, args string) {
 
 }
 
-func (c *Controller) parseChannel(in_channel string) (string, error) {
-	channel, err := c.bot.parseChannel(in_channel)
+func (c *Controller) parseChannel(channelIn string) (string, error) {
+	channel, err := c.bot.parseChannel(channelIn)
 	if err != nil {
 		return channel, err
 	}
@@ -263,7 +267,7 @@ func (c *Controller) parseChannel(in_channel string) (string, error) {
 		return channel, err
 	}
 	if !present {
-		msg := fmt.Sprintf("Not in channel %s ( %s)", in_channel, channel)
+		msg := fmt.Sprintf("Not in channel %s ( %s)", channelIn, channel)
 		return channel, errors.New(msg)
 	}
 	return channel, nil

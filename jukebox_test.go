@@ -18,14 +18,6 @@ func testNewJB(t *testing.T) *Jukebox {
 	return jb
 }
 
-func TestInit(t *testing.T) {
-	err := Cfg.load("testing/test1.ini")
-	assert.Nil(t, err)
-	jukebox, err := NewJukebox(&Cfg)
-	require.NoError(t, err)
-	assert.NotNil(t, jukebox)
-}
-
 func mockFB(user string, channel string, path string) (FromBot, string) {
 	args := fmt.Sprintf("%s %s", channel, path)
 	return FromBot{user: user, message: args}, args
