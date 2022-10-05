@@ -20,7 +20,7 @@ jobs:
     environment: sotd
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
