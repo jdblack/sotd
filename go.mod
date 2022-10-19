@@ -3,7 +3,7 @@ module linuxguru.net/sotd
 go 1.18
 
 require (
-	github.com/go-co-op/gocron v1.17.0
+	github.com/go-co-op/gocron v1.17.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pborman/getopt/v2 v2.1.0
 	github.com/slack-go/slack v0.11.2
